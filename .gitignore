@@ -39,13 +39,6 @@ temp.pdf
 *.pdf
 *.db
 *.sqlite3
-Test1/lectures_db.json
-Test1/progress.db
-src/test.py
-src/rag.py
-Test1/
-data/untitled folder/
-src/demo.py
 # Logs
 *.log
 logs/

@@ -17,7 +17,6 @@ pandas>=2.0  # For data manipulation
 scikit-learn>=1.0  # For TfidfVectorizer
 
 # Database and utilities
-sqlite3  # Part of Python standard library
 uuid>=1.30  # Part of Python standard library
 
 # Optional but recommended
