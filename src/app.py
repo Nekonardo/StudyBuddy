@@ -14,8 +14,9 @@ import time
 from openai import OpenAI
 from pathlib import Path
 from dotenv import load_dotenv
+import numpy as np
+import faiss
 
-from rag import RAG
 
 
 
@@ -181,30 +182,19 @@ with tab1:
                 f.write(uploaded_file.getbuffer())
             
             try:
-                # Initialize RAG with the API key
-                rag = RAG(openai_api_key=os.getenv("OPENAI_API_KEY") or openai_api_key)
-                chunks = rag.ingest(temp_path)
-                
-                # 为每个文档创建唯一的保存路径
-                vector_store_path = os.path.join("data/vector_stores", f"{title}_{hash(uploaded_file.name)}")
-                
-                # 保存向量存储
-                rag.save(vector_store_path)
-                
-                # 使用更新后的 save_lecture 函数
+                ingester = LectureNotesIngester()
+                chunks, embeddings = ingester.ingest(temp_path)
                 lecture_db.save_lecture(
                     title=title,
                     file_name=uploaded_file.name,
                     chunks=chunks,
-                    tags=tags,
-                    vector_store_path=vector_store_path  # 确保这个参数被传入
+                    embeddings=embeddings,
+                    tags=tags
                 )
-                
                 st.session_state.lecture_cache_version += 1
                 st.success("Lecture saved successfully!")
                 time.sleep(1)
                 st.rerun()
-
             except Exception as e:
                 st.error(f"Error: {str(e)}")
             finally:
@@ -558,9 +548,17 @@ with tab4:
             
             with col2:
                 if st.button("🗑️ Delete", key=f"del_{lecture['id']}"):
-                    lecture_db.delete_lecture(lecture["id"])
-                    st.session_state.lecture_cache_version += 1
-                    st.rerun()
+                    try:
+                        success = lecture_db.delete_lecture(lecture["id"])
+                        if success:
+                            st.success(f"Deleted lecture: {lecture['title']}")
+                            st.session_state.lecture_cache_version += 1
+                            time.sleep(0.5)
+                            st.rerun()
+                        else:
+                            st.error("Failed to delete lecture")
+                    except Exception as e:
+                        st.error(f"Deletion error: {str(e)}")
             
             with col3:
                 st.download_button(
@@ -685,9 +683,40 @@ def render_mermaid(mermaid_code):
     height = calculate_height(mermaid_code)
     st.components.v1.html(html_code, height=height, scrolling=True)
 
+def retrieve_relevant_chunks(query: str, lecture_id: str, top_k: int = 3) -> list[str]:
+    """Retrieve relevant chunks from a specific lecture using OpenAI embeddings"""
+    client = OpenAI(api_key=openai_api_key)
+    
+    # Get the selected lecture
+    lecture = lecture_db.get_lecture(lecture_id)
+    if not lecture or "index_path" not in lecture:
+        return []
+    
+    # Generate query embedding
+    query_embed = client.embeddings.create(
+        input=query,
+        model="text-embedding-3-small"
+    ).data[0].embedding
+    query_embed = np.array(query_embed).astype('float32').reshape(1, -1)
+    
+    # Search in the specific lecture's index
+    try:
+        index = faiss.read_index(lecture["index_path"])
+        distances, indices = index.search(query_embed, top_k)
+        return [lecture["chunks"][idx] for idx in indices[0] if idx < len(lecture["chunks"])]
+    except Exception as e:
+        st.error(f"Error searching index: {str(e)}")
+        return []
+
 # Tab 5: AI Teacher
 with tab5:
     st.header("AI Teaching Assistant")
+    # Add lecture context display
+    if selected_lecture:
+        st.sidebar.markdown(f"**Current Context:** {selected_lecture['title']}")
+    else:
+        st.warning("Please select a lecture from the sidebar to enable context-aware assistance")
+        st.stop()
     
     if not openai_api_key:
         load_dotenv(Path(__file__).parent.parent / "config" / ".env")
@@ -696,22 +725,23 @@ with tab5:
             st.info("Please add your OpenAI API key in the sidebar or configure OPENAI_API_KEY in the config/.env file.")
             st.stop()
 
-    # Initialize RAG instance at the beginning of tab5
-    rag = RAG(openai_api_key=openai_api_key)
-
     # Initialize with teaching assistant context
-    if "messages" not in st.session_state:
-        st.session_state["messages"] = [
+    if "messages" not in st.session_state or st.session_state.get("current_lecture_id") != selected_lecture["id"]:
+        st.session_state.messages = [
             {
                 "role": "system", 
                 "content": """
-You are an AI teaching assistant specializing in STEM subjects, with expertise in using Mermaid diagrams to explain concepts and answer questions. Your goal is to provide clear, comprehensive, and visually-aided explanations to user queries. Follow these instructions carefully:
+ou are an AI teaching assistant for the lecture: {selected_lecture['title']}, with expertise in using Mermaid diagrams to explain concepts and answer questions. Your goal is to provide clear, comprehensive, and visually-aided explanations to user queries. Follow these instructions carefully:
 
 1. Analyze the following user question
 
-2. Determine if the question is suitable for explanation using a Mermaid diagram. Consider using diagrams for processes, hierarchies, timelines, relationships, or other structured information. Using a diagram is preferred.
+2.Focus exclusively on content from these lecture notes. If asked about unrelated topics,
+                politely decline and steer back to the lecture material. Use these key concepts:
+                {', '.join(selected_lecture.get('tags', []))}
 
-3. If a diagram is appropriate:
+3. Determine if the question is suitable for explanation using a Mermaid diagram. Consider using diagrams for processes, hierarchies, timelines, relationships, or other structured information. Using a diagram is preferred.
+
+4. If a diagram is appropriate:
     a. Choose the most suitable Mermaid diagram type (e.g., Flowchart, Sequence Diagram, Class Diagram, etc.).
     b. Write the Mermaid diagram code using correct syntax. Enclose the code in mermaid and tags.
     c. Ensure the diagram is clear, concise, and not overcomplicated.
@@ -724,27 +754,27 @@ You are an AI teaching assistant specializing in STEM subjects, with expertise i
     - Avoid mathematical operators (`x`, `+`, `-`, `/`, `*`) directly appearing in node names, otherwise Mermaid parsing will throw an error. Use `_` or `-` instead of operators, such as `Current_x_Resistance` or `Current-Times-Resistance`.
 
 
-4. Provide a textual explanation before the diagram, introducing the concept and why a diagram is helpful.
+5. Provide a textual explanation before the diagram, introducing the concept and why a diagram is helpful.
 
-5. After the diagram, explain its key points and how it relates to the question.
+6. After the diagram, explain its key points and how it relates to the question.
 
-6. For complex questions, consider using multiple diagrams to explain different aspects. Introduce each diagram separately.
+7. For complex questions, consider using multiple diagrams to explain different aspects. Introduce each diagram separately.
 
-7. If the question is not suitable for a diagram, provide a clear textual explanation without forcing diagram use.
+8. If the question is not suitable for a diagram, provide a clear textual explanation without forcing diagram use.
 
-8. When explaining STEM concepts:
+9. When explaining STEM concepts:
    a. Use simple terms and concrete examples.
    b. Provide step-by-step guidance for problem-solving.
    c. Use analogies to clarify misunderstandings.
    d. Suggest relevant study strategies and practice exercises.
 
-9. Use LaTeX for mathematical equations. Enclose equations in single dollar signs for inline equations (e.g., $E=mc^2$) and double dollar signs for display equations (e.g., $$F = G\frac{m_1m_2}{r^2}$$).
+10. Use LaTeX for mathematical equations. Enclose equations in single dollar signs for inline equations (e.g., $E=mc^2$) and double dollar signs for display equations (e.g., $$F = G\frac{m_1m_2}{r^2}$$).
 
-10. Use code blocks for programming concepts. Enclose code in triple backticks with the language specified (e.g., ```python).
+11. Use code blocks for programming concepts. Enclose code in triple backticks with the language specified (e.g., ```python).
 
-11. Focus strictly on academic topics and avoid non-educational content.
+12. Focus strictly on academic topics and avoid non-educational content.
 
-12. Structure your response as follows:
+13. Structure your response as follows:
 
     [Introduction and context]
     [Diagram(s) with explanations (if applicable)]
@@ -763,27 +793,7 @@ Remember, your primary goal is to enhance understanding through clear explanatio
                 "content": "Welcome to your AI-powered study session! 📚 How can I help you with your learning today?"
             }
         ]
-
-
-    chat_mode = "General Chat"
-    if selected_lecture:
-        chat_mode = st.radio(
-            "Chat Mode",
-            ["General Chat", f"Chat with PDF: {selected_lecture['title']}"],
-            index=1
-        )
-
-    if chat_mode.startswith("Chat with PDF:"):
-        try:
-            vector_store_path = selected_lecture.get('vector_store_path')
-            if vector_store_path and os.path.exists(vector_store_path):
-                rag.load(vector_store_path)
-            else:
-                st.warning("Vector store not found for this lecture. Falling back to general chat mode.")
-                chat_mode = "General Chat"
-        except Exception as e:
-            st.error(f"Error loading RAG: {str(e)}")
-            chat_mode = "General Chat"        
+        st.session_state.current_lecture_id = selected_lecture["id"]
 
     messages_container = st.container()
     with messages_container:
@@ -823,33 +833,36 @@ Remember, your primary goal is to enhance understanding through clear explanatio
     if prompt:
         client = OpenAI(api_key=openai_api_key)
         st.session_state.messages.append({"role": "user", "content": prompt})
+        # Retrieve relevant context
+        context_chunks = retrieve_relevant_chunks(
+            prompt, 
+            selected_lecture["id"],  # Use selected lecture's ID
+            top_k=3
+        )
+        context = "\n\n".join(context_chunks)
         
-        if chat_mode.startswith("Chat with PDF:"):
-            try:
-                # Use RAG to get context-aware response
-                context = rag.ask_question(prompt)
-                # Add context to the system message
-                context_message = {
-                    "role": "system",
-                    "content": f"Use this context to answer the question: {context}\n\n" + st.session_state.messages[0]["content"]
-                }
-                
-                # Prepare messages for API call
-                api_messages = [context_message]
-                api_messages.extend([msg for msg in st.session_state.messages[-4:] if msg["role"] != "system"])
-                
-            except Exception as e:
-                st.error(f"Error using RAG: {str(e)}")
-                # Fallback to regular chat if RAG fails
-                api_messages = [msg for msg in st.session_state.messages if msg["role"] != "system"]
-                api_messages.insert(0, st.session_state.messages[0])
-        else:
-            # Regular chat mode
-            api_messages = [msg for msg in st.session_state.messages if msg["role"] != "system"]
-            api_messages.insert(0, st.session_state.messages[0])
+        # Augment the prompt with context
+        augmented_prompt = f"""Lecture Context ({selected_lecture['title']}):
+        {context}
         
+        User question: {prompt}
+        """
+        
+        # Include system message in API call but not in displayed messages
+        api_messages = [msg for msg in st.session_state.messages if msg["role"] != "system"]
+        api_messages.insert(0, st.session_state.messages[0])  # Add system message at start
+        api_messages = [
+            {"role": "system", "content": st.session_state.messages[0]["content"]},
+            {"role": "user", "content": augmented_prompt}
+        ]
+
+        # Include chat history (last 3 messages)
+        for msg in st.session_state.messages[-3:]:
+            if msg["role"] != "system":
+                api_messages.append(msg)
+
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4-turbo",
             messages=api_messages,
             temperature=0.3
         )

@@ -4,75 +4,39 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from pathlib import Path
 
-
 load_dotenv(dotenv_path=Path(__file__).parent.parent / "config" / ".env")
 
 def generate_quiz(chunk: str, api_key: str = None) -> dict:
     """
-    Generates technical questions relevant to ANY academic subject while 
-    filtering out administrative/organizational questions with robust LaTeX handling
+    Generates technical questions with bulletproof JSON formatting
     Returns format: {questions: [{question, options, answer, explanation, topic}]}
     """
-
     client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
 
-    system_prompt = """You are an expert quiz generator specializing in academic content.
-    Rules:
-    1. Focus ONLY on technical/scientific concepts from the provided text
-    2. NEVER create questions about schedules, logistics, or course administration
-    3. Adapt to the subject matter (biology, CS, physics, etc.)
-    4. For mathematical expressions, ALWAYS wrap them in LaTeX math delimiters and use double braces:
-       - Use `$...$` for inline math: $\\frac{{1}}{{2}}$
-       - Use `$$...$$` for displayed equations
-    5. Include fundamental concepts and key terminology
-    6. For LaTeX formatting:
-       - Powers: Use ^ (e.g., $x^{{2}}$)
-       - Subscripts: Use _ (e.g., $x_{{1}}$)
-       - Fractions: $\\frac{{numerator}}{{denominator}}$
-       - Derivatives: $\\frac{{d}}{{dx}}(x^{{n}}) = nx^{{n-1}}$
-       - Integrals: $\\int_{{a}}^{{b}} f(x)dx = F(b) - F(a)$
-       - Limits: $\\lim_{{h \\to 0}} \\frac{{f(x + h) - f(x)}}{{h}}$
-       - Greek letters: $\\alpha$, $\\beta$
-       - Special functions: $\\sin$, $\\cos$, $\\log$
-    Return your response in JSON format. Include the word 'json' in your response.
-    """
+    system_prompt = """You are an expert academic quiz generator. Follow these rules:
+    1. Format ALL text elements using LaTeX with $...$ wrappers
+    2. Escape ALL quotes and special characters with double backslashes
+    3. Use DOUBLE curly braces for JSON templates
+    4. Never include markdown formatting
+    5. Ensure proper JSON syntax with balanced brackets and quotes"""
 
     user_prompt = f"""
-    Generate 5 quiz questions from this text:
+    Generate 5 questions from this content. Use EXACT format:
     
-    === TEXT TO PROCESS ===
-    {chunk[:3000]}
-    
-    Format each question as:
     {{
         "questions": [
             {{
-                "question": "Question text with LaTeX notation",
-                "options": [
-                    "$\\frac{{d}}{{dx}}(x^{{n}}) = nx^{{n-1}}$",
-                    "Other options..."
-                ],
-                "answer": "Correct answer",
-                "explanation": "Explanation",
-                "topic": "Specific subfield"
+                "question": "$\\text{{Example question}}$",
+                "options": ["$\\mathrm{{Option 1}}$", "$\\mathrm{{Option 2}}$"],
+                "answer": "$\\mathrm{{Option 1}}$",
+                "explanation": "$\\text{{Example explanation}}$",
+                "topic": "Subject"
             }}
         ]
     }}
-
-    IMPORTANT: 
-    1. Always wrap mathematical expressions in $ or $$ delimiters!
-    2. Always use double backslash (\\\\) for LaTeX commands!
-    3. Always use double braces {{}} for LaTeX arguments!
     
-    Examples of proper LaTeX formatting:
-    - Fractions: $\\frac{{1}}{{2}}$
-    - Derivatives: $\\frac{{d}}{{dx}}(x^{{n}}) = nx^{{n-1}}$
-    - Integrals: $\\int_{{a}}^{{b}} f(x)dx = F(b) - F(a)$
-    - Limits: $\\lim_{{h \\to 0}} \\frac{{f(x + h) - f(x)}}{{h}}$
-    - Summations: $\\sum_{{i=1}}^{{n}} i^{{2}}$
-    - Matrices: $\\begin{{bmatrix}} a & b \\\\ c & d \\end{{bmatrix}}$
-    - Greek letters: $\\alpha$, $\\beta$, $\\gamma$
-    - Functions: $\\sin(x)$, $\\cos(x)$, $\\log(x)$
+    === CONTENT ===
+    {chunk[:3000]}
     """
 
     try:
@@ -83,11 +47,44 @@ def generate_quiz(chunk: str, api_key: str = None) -> dict:
                 {"role": "user", "content": user_prompt}
             ],
             response_format={"type": "json_object"},
-            temperature=0.2
+            temperature=0.3,
+            max_tokens=1500
         )
         
-        quiz_data = json.loads(response.choices[0].message.content)
-        return quiz_data
+        # Debugging: Print raw response
+        raw_response = response.choices[0].message.content
+        print("Raw API Response:", raw_response)
+        
+        return _validate_quiz(json.loads(raw_response))
+    
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"Invalid JSON format: {str(e)}")
     except Exception as e:
-        print(f"Error generating quiz: {str(e)}")
-        raise
+        raise RuntimeError(f"API Error: {str(e)}")
+
+def _validate_quiz(quiz_data: dict) -> dict:
+    """Validate and sanitize quiz data"""
+    required = {"question", "options", "answer", "explanation", "topic"}
+    
+    for q in quiz_data.get("questions", []):
+        if missing := required - set(q.keys()):
+            raise ValueError(f"Missing fields: {missing}")
+            
+        # Sanitize string fields
+        for field in ["question", "answer", "explanation", "topic"]:
+            if isinstance(q[field], str):
+                q[field] = q[field].replace('"', '\\"').strip('"')
+                
+        # Sanitize options list
+        if isinstance(q["options"], list):
+            q["options"] = [
+                opt.replace('"', '\\"').strip('"') 
+                for opt in q["options"]
+                if isinstance(opt, str)
+            ]
+            
+        # Validate answer exists
+        if q["answer"] not in q["options"]:
+            raise ValueError("Correct answer missing from options")
+            
+    return quiz_data

@@ -10,6 +10,9 @@ from PIL import Image
 import pytesseract
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import os
+import numpy as np
+from openai import OpenAI
+import faiss
 
 # ===== Lecture Notes Ingestion =====
 class LectureNotesIngester:
@@ -20,6 +23,18 @@ class LectureNotesIngester:
             chunk_overlap=300,
             separators=["\n\n## ", "\n# ", "\n\n", "\n", " "]
         )
+        self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))  # Add this
+    
+    def _generate_embeddings(self, chunks: list[str]) -> np.ndarray:
+        """Generate OpenAI embeddings for text chunks"""
+        embeddings = []
+        for chunk in chunks:
+            response = self.openai_client.embeddings.create(
+                input=chunk,
+                model="text-embedding-3-small"
+            )
+            embeddings.append(response.data[0].embedding)
+        return np.array(embeddings).astype('float32')
 
     def _determine_file_type(self, file_path: str) -> str:
         ext = Path(file_path).suffix.lower()
@@ -67,7 +82,8 @@ class LectureNotesIngester:
             
         return text
 
-    def ingest(self, file_path: str) -> list[str]:
+    # Modify existing ingest method
+    def ingest(self, file_path: str) -> tuple[list[str], np.ndarray]:
         ext = self._determine_file_type(file_path)
         if ext == ".pdf":
             raw_text = self._extract_text_from_pdf(file_path)
@@ -75,63 +91,43 @@ class LectureNotesIngester:
             raw_text = self._extract_text_from_docx(file_path)
         else:
             raw_text = self._extract_text_from_txt(file_path)
+        
         cleaned_text = self._clean_text(raw_text)
-        return self.text_splitter.split_text(cleaned_text)
+        chunks = self.text_splitter.split_text(cleaned_text)
+        embeddings = self._generate_embeddings(chunks)
+        return chunks, embeddings
 
 class LectureDB:
     def __init__(self):
         self.db_path = os.path.join(os.path.dirname(__file__), "../data/lectures_db.json")
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-    
-    def save_lecture(self, title: str, file_name: str, chunks: list, tags: list = [], vector_store_path: str = None):
-        """
-        Save lecture information to the database
+        self.embeddings_dir = os.path.join(os.path.dirname(__file__), "../data/embeddings")
+        os.makedirs(self.embeddings_dir, exist_ok=True)
+
+    def save_lecture(self, title: str, file_name: str, chunks: list, embeddings: np.ndarray, tags: list = []):
+        # Create FAISS index
+        dimension = embeddings.shape[1]
+        index = faiss.IndexFlatL2(dimension)
+        index.add(embeddings)
         
-        Args:
-            title: Lecture title
-            file_name: File name
-            chunks: List of Document objects
-            tags: List of tags
-            vector_store_path: Path to the vector store
-        """
-        try:
-            # Convert the Document object to a serializable format
-            serializable_chunks = []
-            for chunk in chunks:
-                if hasattr(chunk, 'page_content'):
-                    # If it is a Document object, extract the page_content.
-                    serializable_chunks.append(chunk.page_content)
-                else:
-                    # If it is already a string, use it directly.
-                    serializable_chunks.append(chunk)
-
-            if not os.path.exists(self.db_path):
-                with open(self.db_path, "w") as f:
-                    json.dump([], f)
-
-            with open(self.db_path, "r+") as f:
-                try:
-                    lectures = json.load(f)
-                except json.JSONDecodeError:
-                    lectures = []
-                
-                lectures.append({
-                    "id": str(uuid.uuid4()),
-                    "title": title,
-                    "upload_date": datetime.now().strftime("%Y-%m-%d"),
-                    "file_name": file_name,
-                    "chunks": serializable_chunks, 
-                    "tags": tags,
-                    "vector_store_path": vector_store_path
-                })
-                
-                f.seek(0)
-                json.dump(lectures, f, ensure_ascii=False, indent=2)
-                f.truncate()
-                
-        except Exception as e:
-            print(f"Error saving lecture: {str(e)}")
-            raise
+        # Save index
+        lecture_id = str(uuid.uuid4())
+        index_path = os.path.join(self.embeddings_dir, f"{lecture_id}.index")
+        faiss.write_index(index, index_path)
+        
+        # Update metadata
+        with open(self.db_path, "r+") as f:
+            lectures = json.load(f)
+            lectures.append({
+                "id": lecture_id,
+                "title": title,
+                "upload_date": datetime.now().strftime("%Y-%m-%d"),
+                "file_name": file_name,
+                "chunks": chunks,
+                "tags": tags,
+                "index_path": index_path
+            })
+            f.seek(0)
+            json.dump(lectures, f, indent=2)
     
     def get_lecture(self, lecture_id: str):
         with open(self.db_path, "r") as f:
@@ -149,14 +145,28 @@ class LectureDB:
             return []
         
     def delete_lecture(self, lecture_id: str):
-        """Optimized deletion with direct file overwrite"""
+        """Optimized deletion with direct file overwrite and embedding cleanup"""
         try:
+            # First get the lecture to find its index path
+            with open(self.db_path, "r") as f:
+                lectures = json.load(f)
+                lecture_to_delete = next((lec for lec in lectures if lec["id"] == lecture_id), None)
+            
+            # Delete the FAISS index file if it exists
+            if lecture_to_delete and "index_path" in lecture_to_delete:
+                index_path = lecture_to_delete["index_path"]
+                if os.path.exists(index_path):
+                    os.remove(index_path)
+                    print(f"Deleted index file: {index_path}")
+
+            # Now remove from JSON database
             with open(self.db_path, "r+") as f:
                 lectures = json.load(f)
                 new_lectures = [lec for lec in lectures if lec["id"] != lecture_id]
                 f.seek(0)
                 json.dump(new_lectures, f, indent=2)
                 f.truncate()
+            
             return True
         except Exception as e:
             print(f"Delete error: {str(e)}")
@@ -192,4 +202,4 @@ class TagDB:
     
     def save_tags(self, tags):
         with open(self.db_path, "w") as f:
-            json.dump(tags, f, indent=2)
+            json.dump(tags, f, indent=2)    

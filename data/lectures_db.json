@@ -1,15 +1,1 @@
-[
-  {
-    "id": "58b10fcb-2ad9-470f-93a6-bd78afd5d60e",
-    "title": "Biology 101",
-    "upload_date": "2025-02-01",
-    "file_name": "Biology 101(Exaplle file).pdf",
-    "chunks": [
-      "Biology 101: Cellular Respiration \nKey Concepts: Mitochondria, ATP , Glycolysis, Krebs Cycle, Electron Transport Chain \n \n1. Overview \nCellular respiration is the process by which cells convert glucose and oxygen into ATP \n(adenosine triphosphate), the cell’s energy currency. \nEquation: \nC6H12O6+6O2→6CO2+6H2O+ATPC6H12O6+6O2→6CO2+6H2O+ATP \n \n2. Stages of Cellular Respiration \na. Glycolysis \n• Occurs in the cytoplasm. \n• Breaks 1 glucose molecule into 2 pyruvate molecules. \n• Produces 2 ATP and 2 NADH. \nb. Krebs Cycle (Citric Acid Cycle) \n• Takes place in the mitochondrial matrix. \n• Generates 2 ATP, 6 NADH, and 2 FADH₂ per glucose. \nc. Electron Transport Chain (ETC) \n• Located in the inner mitochondrial membrane. \n• Uses NADH/FADH₂ to produce ~34 ATP via oxidative phosphorylation. \n \n3. Mitochondria Structure \nLabeled diagram (imagine an image here): \n1. Outer membrane \n2. Inner membrane (cristae) \n3. Matrix \nFunction: The \"powerhouse of the cell\" where the Krebs Cycle and ETC occur.",
-      "• Uses NADH/FADH₂ to produce ~34 ATP via oxidative phosphorylation. \n \n3. Mitochondria Structure \nLabeled diagram (imagine an image here): \n1. Outer membrane \n2. Inner membrane (cristae) \n3. Matrix \nFunction: The \"powerhouse of the cell\" where the Krebs Cycle and ETC occur. \n \n4. Key Terms",
-      "• ATP Synthase: Enzyme that produces ATP in the ETC. \n• Anaerobic Respiration: Occurs without oxygen (e.g., fermentation). \n• Chemiosmosis: Movement of protons to drive ATP synthesis"
-    ],
-    "tags": [],
-    "vector_store_path": "data/vector_stores/Biology 101_-5692373293065871042"
-  }
-]
+[]
