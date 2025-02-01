@@ -1,0 +1,5 @@
+# OpenAI API key for LLM functionality
+# Remember to replace with your own key
+ OPENAI_API_KEY=sk-xxxxx
+# And change the file name to .env
+

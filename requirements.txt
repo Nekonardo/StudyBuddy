@@ -1,13 +1,25 @@
+# Core dependencies
 openai>=1.0
 python-dotenv>=1.0
-PyMuPDF==1.20.2
-python-docx>=0.8
-langchain-text-splitters>=0.0.4
 streamlit>=1.0
-pytesseract>=0.3
-pillow>=10.0
-pdf2image>=1.16
-plotly>=5.0
-pandas
-uuid>=1.30  # (Optional, as it's part of Python stdlib)
-scikit-learn>=1.0  # Used in app.py for TfidfVectorizer
+
+# Document processing
+PyMuPDF==1.20.2  # For PDF processing
+python-docx>=0.8  # For DOCX processing
+langchain-text-splitters>=0.0.4  # For text chunking
+pytesseract>=0.3  # For OCR
+pdf2image>=1.16  # For PDF image extraction
+pillow>=10.0  # For image processing
+
+# Data analysis and visualization
+plotly>=5.0  # For interactive plots
+pandas>=2.0  # For data manipulation
+scikit-learn>=1.0  # For TfidfVectorizer
+
+# Database and utilities
+sqlite3  # Part of Python standard library
+uuid>=1.30  # Part of Python standard library
+
+# Optional but recommended
+black>=23.0  # For code formatting
+pytest>=7.0  # For testing
