@@ -75,26 +75,63 @@ class LectureNotesIngester:
             raw_text = self._extract_text_from_docx(file_path)
         else:
             raw_text = self._extract_text_from_txt(file_path)
-        return self.text_splitter.split_text(self._clean_text(raw_text))
+        cleaned_text = self._clean_text(raw_text)
+        return self.text_splitter.split_text(cleaned_text)
 
 class LectureDB:
     def __init__(self):
         self.db_path = os.path.join(os.path.dirname(__file__), "../data/lectures_db.json")
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
     
-    def save_lecture(self, title: str, file_name: str, chunks: list, tags: list = []):
-        with open(self.db_path, "r+") as f:
-            lectures = json.load(f)
-            lectures.append({
-                "id": str(uuid.uuid4()),
-                "title": title,
-                "upload_date": datetime.now().strftime("%Y-%m-%d"),
-                "file_name": file_name,
-                "chunks": chunks,
-                "tags": tags
-            })
-            f.seek(0)
-            json.dump(lectures, f, indent=2)
+    def save_lecture(self, title: str, file_name: str, chunks: list, tags: list = [], vector_store_path: str = None):
+        """
+        Save lecture information to the database
+        
+        Args:
+            title: Lecture title
+            file_name: File name
+            chunks: List of Document objects
+            tags: List of tags
+            vector_store_path: Path to the vector store
+        """
+        try:
+            # Convert the Document object to a serializable format
+            serializable_chunks = []
+            for chunk in chunks:
+                if hasattr(chunk, 'page_content'):
+                    # If it is a Document object, extract the page_content.
+                    serializable_chunks.append(chunk.page_content)
+                else:
+                    # If it is already a string, use it directly.
+                    serializable_chunks.append(chunk)
+
+            if not os.path.exists(self.db_path):
+                with open(self.db_path, "w") as f:
+                    json.dump([], f)
+
+            with open(self.db_path, "r+") as f:
+                try:
+                    lectures = json.load(f)
+                except json.JSONDecodeError:
+                    lectures = []
+                
+                lectures.append({
+                    "id": str(uuid.uuid4()),
+                    "title": title,
+                    "upload_date": datetime.now().strftime("%Y-%m-%d"),
+                    "file_name": file_name,
+                    "chunks": serializable_chunks, 
+                    "tags": tags,
+                    "vector_store_path": vector_store_path
+                })
+                
+                f.seek(0)
+                json.dump(lectures, f, ensure_ascii=False, indent=2)
+                f.truncate()
+                
+        except Exception as e:
+            print(f"Error saving lecture: {str(e)}")
+            raise
     
     def get_lecture(self, lecture_id: str):
         with open(self.db_path, "r") as f:

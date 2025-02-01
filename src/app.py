@@ -15,6 +15,8 @@ from openai import OpenAI
 from pathlib import Path
 from dotenv import load_dotenv
 
+from rag import RAG
+
 
 
 st.set_page_config(
@@ -179,14 +181,25 @@ with tab1:
                 f.write(uploaded_file.getbuffer())
             
             try:
-                ingester = LectureNotesIngester()
-                chunks = ingester.ingest(temp_path)
+                # Initialize RAG with the API key
+                rag = RAG(openai_api_key=os.getenv("OPENAI_API_KEY") or openai_api_key)
+                chunks = rag.ingest(temp_path)
+                
+                # 为每个文档创建唯一的保存路径
+                vector_store_path = os.path.join("data/vector_stores", f"{title}_{hash(uploaded_file.name)}")
+                
+                # 保存向量存储
+                rag.save(vector_store_path)
+                
+                # 使用更新后的 save_lecture 函数
                 lecture_db.save_lecture(
                     title=title,
                     file_name=uploaded_file.name,
                     chunks=chunks,
-                    tags=tags
+                    tags=tags,
+                    vector_store_path=vector_store_path  # 确保这个参数被传入
                 )
+                
                 st.session_state.lecture_cache_version += 1
                 st.success("Lecture saved successfully!")
                 time.sleep(1)
@@ -683,6 +696,9 @@ with tab5:
             st.info("Please add your OpenAI API key in the sidebar or configure OPENAI_API_KEY in the config/.env file.")
             st.stop()
 
+    # Initialize RAG instance at the beginning of tab5
+    rag = RAG(openai_api_key=openai_api_key)
+
     # Initialize with teaching assistant context
     if "messages" not in st.session_state:
         st.session_state["messages"] = [
@@ -748,6 +764,27 @@ Remember, your primary goal is to enhance understanding through clear explanatio
             }
         ]
 
+
+    chat_mode = "General Chat"
+    if selected_lecture:
+        chat_mode = st.radio(
+            "Chat Mode",
+            ["General Chat", f"Chat with PDF: {selected_lecture['title']}"],
+            index=1
+        )
+
+    if chat_mode.startswith("Chat with PDF:"):
+        try:
+            vector_store_path = selected_lecture.get('vector_store_path')
+            if vector_store_path and os.path.exists(vector_store_path):
+                rag.load(vector_store_path)
+            else:
+                st.warning("Vector store not found for this lecture. Falling back to general chat mode.")
+                chat_mode = "General Chat"
+        except Exception as e:
+            st.error(f"Error loading RAG: {str(e)}")
+            chat_mode = "General Chat"        
+
     messages_container = st.container()
     with messages_container:
         for msg in st.session_state.messages:
@@ -787,9 +824,29 @@ Remember, your primary goal is to enhance understanding through clear explanatio
         client = OpenAI(api_key=openai_api_key)
         st.session_state.messages.append({"role": "user", "content": prompt})
         
-        # Include system message in API call but not in displayed messages
-        api_messages = [msg for msg in st.session_state.messages if msg["role"] != "system"]
-        api_messages.insert(0, st.session_state.messages[0])  # Add system message at start
+        if chat_mode.startswith("Chat with PDF:"):
+            try:
+                # Use RAG to get context-aware response
+                context = rag.ask_question(prompt)
+                # Add context to the system message
+                context_message = {
+                    "role": "system",
+                    "content": f"Use this context to answer the question: {context}\n\n" + st.session_state.messages[0]["content"]
+                }
+                
+                # Prepare messages for API call
+                api_messages = [context_message]
+                api_messages.extend([msg for msg in st.session_state.messages[-4:] if msg["role"] != "system"])
+                
+            except Exception as e:
+                st.error(f"Error using RAG: {str(e)}")
+                # Fallback to regular chat if RAG fails
+                api_messages = [msg for msg in st.session_state.messages if msg["role"] != "system"]
+                api_messages.insert(0, st.session_state.messages[0])
+        else:
+            # Regular chat mode
+            api_messages = [msg for msg in st.session_state.messages if msg["role"] != "system"]
+            api_messages.insert(0, st.session_state.messages[0])
         
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",

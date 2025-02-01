@@ -1,43 +1,15 @@
 [
   {
-    "id": "1b835b8e-7c1e-4a11-95dd-931779c654cc",
+    "id": "58b10fcb-2ad9-470f-93a6-bd78afd5d60e",
     "title": "Biology 101",
-    "upload_date": "2025-01-30",
-    "file_name": "Biology_101.pdf",
-    "chunks": [
-      "Biology 101: Cellular Respiration Key Concepts: Mitochondria, ATP, Glycolysis, Krebs Cycle, Electron Transport Chain\n\n1. Overview\nCellular respiration is the process by which cells convert glucose and oxygen into ATP (adenosine triphosphate), the cell's energy currency.\n\nEquation: C6H12O6 + 6O2 \u2192 6CO2 + 6H2O + ATP",
-      "2. Stages of Cellular Respiration\na. Glycolysis\n\u2022 Occurs in the cytoplasm\n\u2022 Breaks 1 glucose molecule into 2 pyruvate molecules\n\u2022 Produces 2 ATP and 2 NADH\n\nb. Krebs Cycle\n\u2022 Takes place in mitochondrial matrix\n\u2022 Generates 2 ATP, 6 NADH, and 2 FADH2 per glucose"
-    ],
-    "tags": [
-      "Biology",
-      "Cellular Processes"
-    ]
-  },
-  {
-    "id": "dfd7d163-8919-4481-bd7b-3fbacacfee6a",
-    "title": "Computer Science 101",
-    "upload_date": "2025-01-30",
-    "file_name": "CS_101.pdf",
-    "chunks": [
-      "Introduction to Computer Science\n\n1. Basic Concepts\n\u2022 Algorithm: A step-by-step procedure for solving a problem\n\u2022 Program: Implementation of an algorithm in a programming language\n\u2022 Data Structure: A way of organizing data for efficient access and modification",
-      "2. Programming Fundamentals\n\u2022 Variables and Data Types\n\u2022 Control Structures\n\u2022 Functions and Procedures\n\u2022 Object-Oriented Programming Concepts"
-    ],
-    "tags": [
-      "Computer Science",
-      "Programming"
-    ]
-  },
-  {
-    "id": "3bb3661f-0aa9-42e3-bbbf-4a54a107b8e9",
-    "title": "Math note",
     "upload_date": "2025-02-01",
-    "file_name": "math.pdf",
+    "file_name": "Biology 101(Exaplle file).pdf",
     "chunks": [
-      "Calculus Lecture Notes Professor John Doe January 30, 2025 1 Limits and Continuity Definition 1 (Limit). Let f be a function defined on some open interval containing a (except possibly at a). We say the limit of f(x) as x approaches a is L, written: lim x\u2192a f(x) = L if for every \u03f5 > 0, there exists a \u03b4 > 0 such that whenever 0 < |x \u2212a| < \u03b4, then |f(x) \u2212L| < \u03f5. Example 1. Find the limit: lim x\u21922 x2 \u22124 x \u22122 Solution: lim x\u21922 x2 \u22124 x \u22122 = lim x\u21922 (x \u22122)(x + 2) x \u22122 = lim x\u21922(x + 2) = 4 2 Derivatives Definition 2 (Derivative). The derivative of a function f at x is: f \u2032(x) = lim h\u21920 f(x + h) \u2212f(x) h provided this limit exists. Theorem 1 (Power Rule). For any real number n, d dxxn = nxn\u22121 Example 2. Find the derivative of f(x) = 3x4 + 2x2 \u22125 Solution: f \u2032(x) = 12x3 + 4x 1 3 Integrals Definition 3 (Definite Integral). The definite integral of f from a to b is: Z b a f(x)dx = lim n\u2192\u221e n X i=1 f(x\u2217 i )\u2206x Theorem 2 (Fundamental Theorem of Calculus). If f is continuous on [a, b] and F is an",
-      "2. Find the derivative of f(x) = 3x4 + 2x2 \u22125 Solution: f \u2032(x) = 12x3 + 4x 1 3 Integrals Definition 3 (Definite Integral). The definite integral of f from a to b is: Z b a f(x)dx = lim n\u2192\u221e n X i=1 f(x\u2217 i )\u2206x Theorem 2 (Fundamental Theorem of Calculus). If f is continuous on [a, b] and F is an antiderivative of f, then Z b a f(x)dx = F(b) \u2212F(a) Example 3. Calculate: Z 1 0 x2dx Solution: Z 1 0 x2dx = \u0014x3 3 \u00151 0 = 1 3 \u22120 = 1 3 Matrix Examples A = \uf8eb \uf8ed 1 2 3 4 5 6 7 8 9 \uf8f6 \uf8f8, B = \u0014a b c d \u0015 Conclusion These notes cover basic concepts in calculus. Practice problems are recommended to reinforce these concepts. 2"
+      "Biology 101: Cellular Respiration \nKey Concepts: Mitochondria, ATP , Glycolysis, Krebs Cycle, Electron Transport Chain \n \n1. Overview \nCellular respiration is the process by which cells convert glucose and oxygen into ATP \n(adenosine triphosphate), the cell’s energy currency. \nEquation: \nC6H12O6+6O2→6CO2+6H2O+ATPC6H12O6+6O2→6CO2+6H2O+ATP \n \n2. Stages of Cellular Respiration \na. Glycolysis \n• Occurs in the cytoplasm. \n• Breaks 1 glucose molecule into 2 pyruvate molecules. \n• Produces 2 ATP and 2 NADH. \nb. Krebs Cycle (Citric Acid Cycle) \n• Takes place in the mitochondrial matrix. \n• Generates 2 ATP, 6 NADH, and 2 FADH₂ per glucose. \nc. Electron Transport Chain (ETC) \n• Located in the inner mitochondrial membrane. \n• Uses NADH/FADH₂ to produce ~34 ATP via oxidative phosphorylation. \n \n3. Mitochondria Structure \nLabeled diagram (imagine an image here): \n1. Outer membrane \n2. Inner membrane (cristae) \n3. Matrix \nFunction: The \"powerhouse of the cell\" where the Krebs Cycle and ETC occur.",
+      "• Uses NADH/FADH₂ to produce ~34 ATP via oxidative phosphorylation. \n \n3. Mitochondria Structure \nLabeled diagram (imagine an image here): \n1. Outer membrane \n2. Inner membrane (cristae) \n3. Matrix \nFunction: The \"powerhouse of the cell\" where the Krebs Cycle and ETC occur. \n \n4. Key Terms",
+      "• ATP Synthase: Enzyme that produces ATP in the ETC. \n• Anaerobic Respiration: Occurs without oxygen (e.g., fermentation). \n• Chemiosmosis: Movement of protons to drive ATP synthesis"
     ],
-    "tags": [
-      "Math"
-    ]
+    "tags": [],
+    "vector_store_path": "data/vector_stores/Biology 101_-5692373293065871042"
   }
 ]
