@@ -110,6 +110,14 @@ if st.sidebar.button("🔄 Refresh note list"):
     st.session_state.lecture_cache_version += 1
     st.rerun()
 with st.sidebar:
+    chat_mode = "General Chat"
+    if selected_lecture:
+        chat_mode = st.radio(
+            "Chat Mode",
+            ["General Chat", f"Chat with PDF: {selected_lecture['title']}"],
+            index=1
+        )
+
     st.divider()
     openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
     "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
@@ -765,14 +773,7 @@ Remember, your primary goal is to enhance understanding through clear explanatio
         ]
 
 
-    chat_mode = "General Chat"
-    if selected_lecture:
-        chat_mode = st.radio(
-            "Chat Mode",
-            ["General Chat", f"Chat with PDF: {selected_lecture['title']}"],
-            index=1
-        )
-
+ 
     if chat_mode.startswith("Chat with PDF:"):
         try:
             vector_store_path = selected_lecture.get('vector_store_path')
@@ -849,7 +850,7 @@ Remember, your primary goal is to enhance understanding through clear explanatio
             api_messages.insert(0, st.session_state.messages[0])
         
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o",
             messages=api_messages,
             temperature=0.3
         )

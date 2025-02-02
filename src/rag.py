@@ -1,4 +1,4 @@
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredMarkdownLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -21,11 +21,11 @@ class RAG:
 
     def ingest(self, file: Union[str, BinaryIO, Path]) -> list[str]:
         """
-        Process uploaded PDF file and split into chunks
+        Process uploaded PDF/TXT file and split into chunks
         
         Args:
             file: Can be either:
-                - A string path to the PDF file
+                - A string path to the PDF/TXT file
                 - A file-like object (BinaryIO)
                 - A Path object
         """
@@ -36,7 +36,7 @@ class RAG:
             if hasattr(file, 'name'):
                 filename = os.path.basename(file.name)
             else:
-                filename = "temp.pdf"
+                filename = "temp_file"  # Remove default .pdf extension
             file_path = f"./temp/{filename}"
             
             with open(file_path, "wb") as buffer:
@@ -45,8 +45,18 @@ class RAG:
                 else:
                     buffer.write(file)
 
+        # Determine file type and use appropriate loader
+        file_extension = os.path.splitext(file_path)[1].lower()
+        if file_extension == '.pdf':
+            loader = PyPDFLoader(file_path)
+        elif file_extension == '.txt':
+            loader = TextLoader(file_path, encoding='utf-8')
+        elif file_extension == '.md':
+            loader = UnstructuredMarkdownLoader(file_path)
+        else:
+            raise ValueError(f"Unsupported file type: {file_extension}")
+
         # Load and parse PDF content
-        loader = PyPDFLoader(file_path)
         documents = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
