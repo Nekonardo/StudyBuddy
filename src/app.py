@@ -163,7 +163,7 @@ def main():
 # ===== Main Content =====
 tab1, tab2, tab3, tab4 = st.tabs(["Manage Notes", "Take Quiz", "Progress Dashboard", "AI Teacher"])
 
-# Tab 1: Upload Notes
+# Tab 1: Manage Notes
 with tab1:
     st.header("Upload Notes")
     uploaded_file = st.file_uploader("Upload PDF/DOCX/TXT", type=["pdf", "docx", "txt"])
@@ -238,7 +238,6 @@ with tab1:
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
 
-    # Add a divider between upload and management sections
     st.divider()
     
     # Add Note Management section
@@ -341,8 +340,7 @@ with tab2:
         if st.session_state.quiz and 'questions' in st.session_state.quiz:
             st.subheader("Current Quiz")
             
-            # Critical CSS fixes
-            # In app.py (within the quiz display section)
+            # CSS fixes
             st.markdown("""
             <style>
                 /* Radio button alignment fix */
@@ -497,7 +495,7 @@ with tab2:
                             ]
                         )
                         st.success("Quiz submitted successfully!")
-                        st.session_state.submitted = True  # Add this line
+                        st.session_state.submitted = True
                         st.rerun()
                     except Exception as e:
                         st.error(f"Submission error: {str(e)}")
@@ -610,9 +608,12 @@ with tab2:
             st.info("📊 No quiz data available yet. Take some quizzes to see progress!")
 
 
-# Tab 5: AI Teacher
+# Tab 4: AI Teacher
 with tab4:
     st.header("AI Teaching Assistant")
+    
+    if selected_lecture:
+        st.subheader("Selected Note: " + selected_lecture["title"])
     
     if not openai_api_key:
         load_dotenv(Path(__file__).parent.parent / "config" / ".env")
