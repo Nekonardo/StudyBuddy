@@ -127,15 +127,19 @@ Generate visual diagrams for better understanding:
 
 ```mermaid
 graph LR
-    A[Upload Notes] --> B[AI Processing]
+    A[Upload Notes] --> B[Pre Processing]
     B --> C[Knowledge Base]
-    C --> D[Quiz Generation]
-    C --> E[AI Teacher]
+    C --> D[AI Processing]
+    D --> E[Quiz Generation]
+    D --> F[PDF Chat]
+
     style A fill:#f9f,stroke:#333
     style B fill:#bbf,stroke:#333
     style C fill:#dfd,stroke:#333
     style D fill:#fdd,stroke:#333
     style E fill:#ddf,stroke:#333
+    style F fill:#ffd,stroke:#333
+
 ```
 This flowchart demonstrates how uploaded notes are processed and utilized for both quiz generation and AI teaching features.
 
