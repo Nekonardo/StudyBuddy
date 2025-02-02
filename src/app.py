@@ -11,8 +11,8 @@ import json
 import uuid
 from datetime import datetime
 import time
-from langchain_openai import OpenAI as LangchainOpenAI  # 重命名以避免与 openai.OpenAI 冲突
-from openai import OpenAI  # 保留原始 OpenAI 客户端
+from langchain_openai import ChatOpenAI  # Update import
+from openai import OpenAI  
 from pathlib import Path
 from dotenv import load_dotenv
 from reportlab.lib import colors
@@ -256,7 +256,7 @@ with tab2:
                 key_chunks = get_key_chunks(chunks)  # Use first 3 chunks for context
                 quiz_data = generate_quiz(
                     "\n".join(key_chunks),
-                    api_key=st.session_state.get("chatbot_api_key")  # 从 sidebar 获取的 key
+                    api_key=st.session_state.get("chatbot_api_key")  
                 )
                 if quiz_data:
                     st.session_state.quiz = quiz_data
@@ -926,7 +926,11 @@ Remember, your primary goal is to enhance understanding through clear explanatio
     prompt = st.chat_input("Ask your study question here...")
     
     if prompt:
-        client = LangchainOpenAI(api_key=openai_api_key)
+        client = ChatOpenAI(
+            api_key=openai_api_key,
+            model_name=model,  # Use model_name instead of model
+            temperature=0.3
+        )
         st.session_state.messages.append({"role": "user", "content": prompt})
         
         if chat_mode.startswith("Chat with PDF:"):
@@ -953,13 +957,9 @@ Remember, your primary goal is to enhance understanding through clear explanatio
             api_messages = [msg for msg in st.session_state.messages if msg["role"] != "system"]
             api_messages.insert(0, st.session_state.messages[0])
         
-        response = client.chat.completions.create(
-            model=model,
-            messages=api_messages,
-            temperature=0.3
-        )
+        response = client.invoke(api_messages)
+        msg = response.content  # Extract content from the response
         
-        msg = response.choices[0].message.content
         st.session_state.messages.append({"role": "assistant", "content": msg})
         st.rerun()
 

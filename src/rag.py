@@ -108,46 +108,32 @@ class RAG:
             "relevant_texts": relevant_texts
         }
 
-    def save(self, path: Union[str, Path]):
-        """
-        Save vector storage to specified path
+    def save(self, path: Union[str, Path]) -> None:
+        """Save the vector store to disk."""
+        path = Path(path)
+        # Create directory if it doesn't exist
+        path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Save the vector store
+        self.vectorstore.save_local(str(path))
 
-        Args:
-
-        path: Path to save vector storage
-        """
-        if self.vectorstore is None:
-            raise ValueError("No vector store to save. Please ingest documents first.")
+    def load(self, path: Union[str, Path]) -> None:
+        """Load the vector store from disk."""
+        path = Path(path)
+        if not path.exists():
+            raise FileNotFoundError(f"Vector store not found at {path}")
             
-        # 确保目录存在
-        save_path = Path(path)
-        save_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # 保存向量存储
-        self.vectorstore.save_local(str(save_path))
-        
-    def load(self, path: Union[str, Path]):
-        """
-        Load vector storage from the specified path
-
-        Args:
-
-        path: Path to the vector storage
-        """
-        if not Path(path).exists():
-            raise ValueError(f"Vector store path does not exist: {path}")
+        try:
+            self.vectorstore = FAISS.load_local(
+                str(path),
+                OpenAIEmbeddings(api_key=self.openai_api_key),
+                allow_dangerous_deserialization=True
+            )
             
-
-        embeddings = OpenAIEmbeddings(openai_api_key=self.openai_api_key)
-
-        self.vectorstore = FAISS.load_local(
-            str(path), 
-            embeddings,
-            allow_dangerous_deserialization=True
-        )
-        
-
-        self.qa = RetrievalQA.from_chain_type(
-            llm=OpenAI(api_key=self.openai_api_key), 
-            retriever=self.vectorstore.as_retriever()
-        )
+            # Reinitialize QA chain with loaded vectorstore
+            self.qa = RetrievalQA.from_chain_type(
+                llm=OpenAI(api_key=self.openai_api_key),
+                retriever=self.vectorstore.as_retriever()
+            )
+        except Exception as e:
+            raise Exception(f"Error loading vector store: {str(e)}")
