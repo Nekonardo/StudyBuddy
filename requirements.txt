@@ -22,8 +22,6 @@ plotly>=5.18.0
 pandas>=2.0.0
 scikit-learn>=1.0.2
 
-# Database
-sqlite3  # Built into Python
 
 # Utilities
 uuid>=1.30  # Built into Python

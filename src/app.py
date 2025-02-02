@@ -116,6 +116,7 @@ if st.sidebar.button("🔄 Refresh note list"):
     st.session_state.lecture_cache_version += 1
     st.rerun()
 with st.sidebar:
+    st.divider()
     chat_mode = "General Chat"
     if selected_lecture:
         chat_mode = st.radio(
@@ -797,23 +798,7 @@ def calculate_graph_depth(mermaid_code):
 # Tab 5: AI Teacher
 with tab5:
     st.header("AI Teaching Assistant")
-    
-    if not openai_api_key:
-        load_dotenv(Path(__file__).parent.parent / "config" / ".env")
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if not openai_api_key:
-            st.info("Please add your OpenAI API key in the sidebar or configure OPENAI_API_KEY in the config/.env file.")
-            st.stop()
-
-    # Initialize RAG instance at the beginning of tab5
-    rag = RAG(openai_api_key=openai_api_key)
-
-    # Initialize with teaching assistant context
-    if "messages" not in st.session_state:
-        st.session_state["messages"] = [
-            {
-                "role": "system", 
-                "content": """
+    SYSTEM_MESSAGE ="""
 You are an AI teaching assistant specializing in STEM subjects, with expertise in using Mermaid diagrams to explain concepts and answer questions. Your goal is to provide clear, comprehensive, and visually-aided explanations to user queries. Follow these instructions carefully:
 
 1. Analyze the following user question
@@ -866,6 +851,23 @@ You are an AI teaching assistant specializing in STEM subjects, with expertise i
 Remember, your primary goal is to enhance understanding through clear explanations and visual aids when appropriate.
 
 """
+
+    if not openai_api_key:
+        load_dotenv(Path(__file__).parent.parent / "config" / ".env")
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if not openai_api_key:
+            st.info("Please add your OpenAI API key in the sidebar or configure OPENAI_API_KEY in the config/.env file.")
+            st.stop()
+
+    # Initialize RAG instance at the beginning of tab5
+    rag = RAG(openai_api_key=openai_api_key)
+
+    # Initialize with teaching assistant context
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = [
+            {
+                "role": "system", 
+                "content": SYSTEM_MESSAGE
             },
             {
                 "role": "assistant", 
@@ -963,11 +965,11 @@ Remember, your primary goal is to enhance understanding through clear explanatio
     # Add export button in a container
     export_container = st.container()
     with export_container:
-        col1, col2 = st.columns([4, 1])
+        col1, col2 = st.columns([2, 1])
         with col2:
             subcol1, subcol2 = st.columns([1, 1])
             with subcol1:
-                if st.button("🔄 Clear Chat"):
+                if st.button("🔄 Clear Chat", key=f"clear_chat_button_{{current_lecture_id}}"):
                     # Reset chat history but keep system message and welcome message
                     st.session_state.messages = [
                         st.session_state.messages[0],  # Keep system message
@@ -975,7 +977,7 @@ Remember, your primary goal is to enhance understanding through clear explanatio
                     ]
                     st.rerun()
             with subcol2:
-                if st.button("📑 Export Chat"):
+                if st.button("📑 Export Chat", key=f"export_chat_button_{{current_lecture_id}}"):
                     # Create PDF
                     buffer = BytesIO()
                     doc = SimpleDocTemplate(buffer, pagesize=letter)
@@ -1054,6 +1056,25 @@ Remember, your primary goal is to enhance understanding through clear explanatio
                         mime="application/pdf",
                     )
                     st.success("PDF generated successfully! Click the button above to download.")
+
+# Add custom CSS for right-aligned buttons
+st.markdown("""
+<style>
+    .stButton {
+        position: relative;
+        float: right;
+        margin-left: 10px;
+    }
+    .button-container {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 1rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+
 
 # ===== Run the App =====
 if __name__ == "__main__":
