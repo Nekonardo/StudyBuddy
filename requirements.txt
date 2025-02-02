@@ -7,9 +7,11 @@ streamlit>=1.30.0
 PyMuPDF==1.20.2
 python-docx>=0.8.1
 langchain>=0.1.0
+langchain-openai>=0.0.1
 langchain-text-splitters>=0.0.4
 chromadb>=0.4.22
 sentence-transformers>=2.2.2
+torch>=2.0.0
 
 # PDF and document handling
 pytesseract>=0.3.10

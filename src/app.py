@@ -11,7 +11,8 @@ import json
 import uuid
 from datetime import datetime
 import time
-from openai import OpenAI
+from langchain_openai import OpenAI as LangchainOpenAI  # 重命名以避免与 openai.OpenAI 冲突
+from openai import OpenAI  # 保留原始 OpenAI 客户端
 from pathlib import Path
 from dotenv import load_dotenv
 from reportlab.lib import colors
@@ -925,7 +926,7 @@ Remember, your primary goal is to enhance understanding through clear explanatio
     prompt = st.chat_input("Ask your study question here...")
     
     if prompt:
-        client = OpenAI(api_key=openai_api_key)
+        client = LangchainOpenAI(api_key=openai_api_key)
         st.session_state.messages.append({"role": "user", "content": prompt})
         
         if chat_mode.startswith("Chat with PDF:"):
