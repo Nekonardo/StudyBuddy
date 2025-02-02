@@ -211,19 +211,16 @@ with tab1:
                 rag = RAG(openai_api_key=os.getenv("OPENAI_API_KEY") or openai_api_key)
                 chunks = rag.ingest(temp_path)
                 
-                # 为每个文档创建唯一的保存路径
                 vector_store_path = os.path.join("data/vector_stores", f"{title}_{hash(uploaded_file.name)}")
                 
-                # 保存向量存储
                 rag.save(vector_store_path)
                 
-                # 使用更新后的 save_lecture 函数
                 lecture_db.save_lecture(
                     title=title,
                     file_name=uploaded_file.name,
                     chunks=chunks,
                     tags=tags,
-                    vector_store_path=vector_store_path  # 确保这个参数被传入
+                    vector_store_path=vector_store_path  
                 )
                 
                 st.session_state.lecture_cache_version += 1
