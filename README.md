@@ -1,6 +1,6 @@
-# AI Learning Assistant
+# StudyBuddy
 
-The AI Learning Assistant is an interactive platform designed to enhance the learning process by providing tools to upload notes, generate quizzes, manage progress, and engage in intelligent PDF-based discussions.
+StudyBuddy is an interactive platform designed to enhance the learning process by providing tools to upload notes, generate quizzes, manage progress, and engage in intelligent PDF-based discussions.
 
 ---
 
@@ -88,7 +88,7 @@ project/
 │   ├── lectures_db.json # Lecture metadata storage
 │   ├── tags_db.json    # Tag management system
 │   ├── progress.db     # Quiz and progress tracking
-│   └── vector_stores/  # RAG vector stores
+│   └── vector_stores  # RAG vector stores
 │
 ├── config/             # Configuration files
 │   └── .env           # Environment variables such as OPENAI_API_KEY
