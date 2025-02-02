@@ -1,3 +1,4 @@
+import re
 import streamlit as st
 import plotly.express as px
 import os
@@ -615,6 +616,21 @@ with tab4:
 
 # Helper function for tab5
 def render_mermaid(mermaid_code):
+    def sanitize_mermaid_code(mermaid_code):
+        def clean_node_name(match):
+            node_id = match.group(1)
+            node_label = match.group(2)
+
+
+            sanitized_label = re.sub(r"[()]", "", node_label)
+
+            return f"{node_id}[{sanitized_label}]"
+
+        cleaned_code = re.sub(r"(\w+)\[(.*?)\]", clean_node_name, mermaid_code)
+
+        return cleaned_code
+
+    mermaid_code = sanitize_mermaid_code(mermaid_code)
     def display_html_dynamic(html_code, height):
 
         screen_width = st.components.v1.html(
