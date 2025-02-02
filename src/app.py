@@ -120,6 +120,8 @@ if st.sidebar.button("🔄 Refresh note list"):
 with st.sidebar:
     st.divider()
     chat_mode = "General Chat"
+
+
     if selected_lecture:
         chat_mode = st.radio(
             "Chat Mode",
@@ -131,8 +133,9 @@ with st.sidebar:
     openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
     model = st.selectbox(
         "Select OpenAI Model",
-        [
+        [     
             "gpt-4o",
+            "gpt-4o-mini",
             "gpt-4-0125-preview",  # GPT-4 Turbo
             "gpt-4",               # GPT-4
             "gpt-3.5-turbo-0125",  # GPT-3.5 Turbo
