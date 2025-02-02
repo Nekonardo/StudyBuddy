@@ -21,10 +21,15 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from io import BytesIO
 import html
+import sys
+import locale
 
 from rag import RAG
 
-
+# Set UTF-8 as default encoding for Windows
+if sys.platform.startswith('win'):
+    sys.stdout.reconfigure(encoding='utf-8')
+    locale.setlocale(locale.LC_ALL, 'C.UTF-8')
 
 st.set_page_config(
     page_title="StudyBuddy",
@@ -816,8 +821,12 @@ You are an AI teaching assistant specializing in STEM subjects, with expertise i
     - Use <|-- for class inheritance and <|.. for interface implementation, and do not mix them incorrectly.
     - Ensure interface is used only for defining interfaces, not regular classes.
     - Keep relationships simple and structured, avoiding excessive arrow types or complex hierarchies.
-    - Avoid mathematical operators (`x`, `+`, `-`, `/`, `*`) directly appearing in node names, otherwise Mermaid parsing will throw an error. Use `_` or `-` instead of operators, such as `Current_x_Resistance` or `Current-Times-Resistance`.
-
+    - CRITICAL: Never use parentheses () or any special characters in node names or labels. Replace them with underscores or descriptive text:
+        ❌ Bad:  process(data)
+        ✅ Good: process_data
+        ❌ Bad:  check(x>0)
+        ✅ Good: check_if_x_greater_than_0
+    - ALWAYS Avoid mathematical operators (`x`, `+`, `-`, `/`, `*`) and special characters (`(`,`)`,`#`, `%`, `&`, `|`, `@`, `!`, `?`, `:`, `;`) directly appearing in node names or labels.
 
 4. Provide a textual explanation before the diagram, introducing the concept and why a diagram is helpful.
 

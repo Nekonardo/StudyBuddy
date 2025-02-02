@@ -37,5 +37,29 @@
     ],
     "tags": [],
     "vector_store_path": "data/vector_stores/DD_7676248095819427095"
+  },
+  {
+    "id": "07847ae4-b67b-4dca-82c1-aae0b47f8a17",
+    "title": "My Lecture Notes",
+    "upload_date": "2025-02-02",
+    "file_name": "math.pdf",
+    "chunks": [
+      "Calculus Lecture Notes\nProfessor John Doe\nJanuary 30, 2025\n1 Limits and Continuity\nDefinition 1 (Limit). Let f be a function defined on some open interval containing a\n(except possibly at a). We say the limit of f(x) as x approaches a is L, written:\nlim\nx→a\nf(x) = L\nif for every ϵ > 0, there exists a δ > 0 such that whenever 0 < |x − a| < δ, then\n|f(x) − L| < ϵ.\nExample 1. Find the limit:\nlim\nx→2\nx2 − 4\nx − 2\nSolution:\nlim\nx→2\nx2 − 4\nx − 2 = lim\nx→2\n(x − 2)(x + 2)\nx − 2 = lim\nx→2\n(x + 2) = 4\n2 Derivatives\nDefinition 2 (Derivative). The derivative of a function f at x is:\nf′(x) = lim\nh→0\nf(x + h) − f(x)\nh\nprovided this limit exists.\nTheorem 1 (Power Rule). For any real number n,\nd\ndxxn = nxn−1\nExample 2. Find the derivative of f(x) = 3x4 + 2x2 − 5\nSolution:\nf′(x) = 12x3 + 4x\n1",
+      "3 Integrals\nDefinition 3 (Definite Integral). The definite integral of f from a to b is:\nZ b\na\nf(x)dx = lim\nn→∞\nnX\ni=1\nf(x∗\ni )∆x\nTheorem 2 (Fundamental Theorem of Calculus) . If f is continuous on [a, b] and F is\nan antiderivative of f, then\nZ b\na\nf(x)dx = F(b) − F(a)\nExample 3. Calculate: Z 1\n0\nx2dx\nSolution: Z 1\n0\nx2dx =\n\u0014x3\n3\n\u00151\n0\n= 1\n3 − 0 = 1\n3\nMatrix Examples\nA =\n\n\n1 2 3\n4 5 6\n7 8 9\n\n, B =\n\u0014a b\nc d\n\u0015\nConclusion\nThese notes cover basic concepts in calculus. Practice problems are recommended to\nreinforce these concepts.\n2"
+    ],
+    "tags": [],
+    "vector_store_path": "data/vector_stores/My Lecture Notes_7871917602666930285"
+  },
+  {
+    "id": "3d8f4e27-317b-42d4-9c47-086c08ea2da9",
+    "title": "My Lecture Notes",
+    "upload_date": "2025-02-02",
+    "file_name": "math.pdf",
+    "chunks": [
+      "Calculus Lecture Notes\nProfessor John Doe\nJanuary 30, 2025\n1 Limits and Continuity\nDefinition 1 (Limit). Let f be a function defined on some open interval containing a\n(except possibly at a). We say the limit of f(x) as x approaches a is L, written:\nlim\nx→a\nf(x) = L\nif for every ϵ > 0, there exists a δ > 0 such that whenever 0 < |x − a| < δ, then\n|f(x) − L| < ϵ.\nExample 1. Find the limit:\nlim\nx→2\nx2 − 4\nx − 2\nSolution:\nlim\nx→2\nx2 − 4\nx − 2 = lim\nx→2\n(x − 2)(x + 2)\nx − 2 = lim\nx→2\n(x + 2) = 4\n2 Derivatives\nDefinition 2 (Derivative). The derivative of a function f at x is:\nf′(x) = lim\nh→0\nf(x + h) − f(x)\nh\nprovided this limit exists.\nTheorem 1 (Power Rule). For any real number n,\nd\ndxxn = nxn−1\nExample 2. Find the derivative of f(x) = 3x4 + 2x2 − 5\nSolution:\nf′(x) = 12x3 + 4x\n1",
+      "3 Integrals\nDefinition 3 (Definite Integral). The definite integral of f from a to b is:\nZ b\na\nf(x)dx = lim\nn→∞\nnX\ni=1\nf(x∗\ni )∆x\nTheorem 2 (Fundamental Theorem of Calculus) . If f is continuous on [a, b] and F is\nan antiderivative of f, then\nZ b\na\nf(x)dx = F(b) − F(a)\nExample 3. Calculate: Z 1\n0\nx2dx\nSolution: Z 1\n0\nx2dx =\n\u0014x3\n3\n\u00151\n0\n= 1\n3 − 0 = 1\n3\nMatrix Examples\nA =\n\n\n1 2 3\n4 5 6\n7 8 9\n\n, B =\n\u0014a b\nc d\n\u0015\nConclusion\nThese notes cover basic concepts in calculus. Practice problems are recommended to\nreinforce these concepts.\n2"
+    ],
+    "tags": [],
+    "vector_store_path": "data/vector_stores/My Lecture Notes_7871917602666930285"
   }
 ]
