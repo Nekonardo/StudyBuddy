@@ -1,24 +1,31 @@
 # Core dependencies
-openai>=1.0
-python-dotenv>=1.0
-streamlit>=1.0
+openai>=1.0.0
+python-dotenv>=1.0.0
+streamlit>=1.30.0
 
-# Document processing
-PyMuPDF==1.20.2  # For PDF processing
-python-docx>=0.8  # For DOCX processing
-langchain-text-splitters>=0.0.4  # For text chunking
-pytesseract>=0.3  # For OCR
-pdf2image>=1.16  # For PDF image extraction
-pillow>=10.0  # For image processing
+# Document processing and RAG
+PyMuPDF==1.20.2
+python-docx>=0.8.1
+langchain>=0.1.0
+langchain-text-splitters>=0.0.4
+chromadb>=0.4.22
+sentence-transformers>=2.2.2
+
+# PDF and document handling
+pytesseract>=0.3.10
+pdf2image>=1.16.3
+pillow>=10.0.0
+reportlab>=4.0.8
 
 # Data analysis and visualization
-plotly>=5.0  # For interactive plots
-pandas>=2.0  # For data manipulation
-scikit-learn>=1.0  # For TfidfVectorizer
+plotly>=5.18.0
+pandas>=2.0.0
+scikit-learn>=1.0.2
 
-# Database and utilities
-uuid>=1.30  # Part of Python standard library
+# Database
+sqlite3  # Built into Python
 
-# Optional but recommended
-black>=23.0  # For code formatting
-pytest>=7.0  # For testing
+# Utilities
+uuid>=1.30  # Built into Python
+black>=23.0  # Development only
+pytest>=7.0  # Development only

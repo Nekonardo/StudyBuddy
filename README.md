@@ -10,49 +10,65 @@ The AI Learning Assistant is an interactive platform designed to enhance the lea
 - Upload learning materials in PDF, DOCX, or TXT format
 - Manage uploaded files with tagging and categorization
 - Support for bulk file operations
+- RAG (Retrieval-Augmented Generation) integration for enhanced content processing
 
 ### 2. **Take Quiz**
 - Automatically generate quizzes based on uploaded notes
 - Real-time quiz-taking experience with multiple-choice questions
 - Instant feedback and explanations
 - Track quiz performance and progress
+- LaTeX support for mathematical equations
+- Improved quiz UI with visual feedback
 
 ### 3. **Progress Dashboard**
 - Visualize learning trends and performance metrics
 - Track quiz scores over time
 - Identify weak topics for focused study
 - Monitor overall learning progress
+- Real-time performance analytics
 
 ### 4. **Manage Lectures**
 - Organize and categorize learning materials
 - Tag-based organization system
 - Search and filter functionality
 - Bulk operations for file management
+- Export lecture data
+- Vector store management for RAG
 
-### 5. **AI Teacher**
+### 5. **PDF Chat**
 - Interactive chat interface for discussing course content
+- Context-aware responses using RAG technology
 - LaTeX support for mathematical equations and formulas
 - Mermaid diagram generation for visualizing concepts
 - AI-powered explanations using visual aids
 - Real-time rendering of mathematical notations
+- Chat history export to PDF
+- Multiple OpenAI model support
+- Two chat modes: General and PDF-specific
 
 ---
 
 ## **How to Run the Application**
 
-1. **Install Dependencies**
+1. **Configure Environment**
+   Create a `config/.env` file with your OpenAI API key:
+   ```bash
+   OPENAI_API_KEY=your_api_key_here
+   ```
+
+2. **Install Dependencies**
    Ensure you have Python and required libraries installed. Run:
    ```bash
    pip install -r requirements.txt
    ```
 
-2. **Start the Application**
+3. **Start the Application**
    Run the following command in your terminal:
    ```bash
    streamlit run src/app.py
    ```
 
-3. **Access the Application**
+4. **Access the Application**
    Open the provided URL in your web browser (default: `http://localhost:8501`).
 
 ---
@@ -65,12 +81,14 @@ project/
 │   ├── app.py          # Main application file
 │   ├── ingestion.py    # File processing and upload logic
 │   ├── quiz_generator.py # Quiz generation system
-│   └── database.py     # Progress tracking and data storage
+│   ├── database.py     # Progress tracking and data storage
+│   └── rag.py         # RAG implementation
 │
 ├── data/               # Application data
 │   ├── lectures_db.json # Lecture metadata storage
 │   ├── tags_db.json    # Tag management system
-│   └──  progress.db     # Quiz and progress tracking
+│   ├── progress.db     # Quiz and progress tracking
+│   └── vector_stores/  # RAG vector stores
 │
 ├── config/             # Configuration files
 │   └── .env           # Environment variables such as OPENAI_API_KEY
@@ -81,7 +99,7 @@ project/
 
 ---
 
-## **Example Usage**
+## **Interactive Features Demonstration**
 
 ### LaTeX Equations
 The assistant can render mathematical equations:
@@ -90,6 +108,21 @@ The assistant can render mathematical equations:
 ```
 
 ### Mermaid Diagrams
+The application supports Mermaid diagrams for creating various types of visualizations:
+
+- **Flowcharts** (`graph`) - For visualizing processes and workflows
+- **Sequence Diagrams** (`sequenceDiagram`) - For showing interactions between components
+- **Gantt Charts** (`gantt`) - For project timelines and schedules  
+- **Pie Charts** (`pie`) - For showing proportional data
+- **Entity Relationship Diagrams** (`erDiagram`) - For database schemas
+- **Class Diagrams** (`classDiagram`) - For object-oriented structures
+- **State Diagrams** (`stateDiagram`) - For state machines and workflows
+- **Journey Diagrams** (`journey`) - For user journeys and experiences
+
+Mermaid uses simple text-based syntax to generate these diagrams, making it easy to create and maintain visualizations directly in markdown. The diagrams are rendered automatically when viewing the chat dialouge.
+
+#### Example Usage
+
 Generate visual diagrams for better understanding:
 
 ```mermaid
@@ -104,6 +137,7 @@ graph LR
     style D fill:#fdd,stroke:#333
     style E fill:#ddf,stroke:#333
 ```
+This flowchart demonstrates how uploaded notes are processed and utilized for both quiz generation and AI teaching features.
 
 ```mermaid
 sequenceDiagram
@@ -120,6 +154,7 @@ sequenceDiagram
     S->>AI: Review Mistakes
     AI->>S: Detailed Explanation
 ```
+This sequence diagram illustrates the interaction flow between students, the AI assistant, and the quiz system during a typical learning session.
 
 ```mermaid
 pie title Learning Time Distribution
@@ -128,6 +163,7 @@ pie title Learning Time Distribution
     "AI Discussions" : 20
     "Review" : 15
 ```
+The pie chart shows the recommended time allocation for different learning activities, with active learning taking the largest portion at 40%.
 
 ```mermaid
 gantt
@@ -142,6 +178,7 @@ gantt
     section Review
     Final Review         :a5, after a3, 7d
 ```
+This Gantt chart outlines a typical learning timeline, showing the progression from initial material upload through practice to final review.
 
 ```mermaid
 mindmap
@@ -163,13 +200,15 @@ mindmap
             Targeted Practice
             Performance Analytics
 ```
+This mind map breaks down the key components and sub-components of the entire learning process within the system.
 
-These diagrams illustrate different aspects of the learning process:
-- Flow diagram: Shows the basic workflow of the application
-- Sequence diagram: Demonstrates student-AI interaction flow
-- Pie chart: Represents optimal time distribution for effective learning
-- Gantt chart: Displays a typical learning timeline
-- Mind map: Breaks down the complete learning process
+These diagrams showcase both our system's features and our platform's built-in visualization capabilities. Students can easily create and view these types of diagrams during their learning sessions, helping them better understand abstract concepts through visual representation.
+- Sequence diagrams help visualize interaction flows and processes
+- Pie charts make data distribution and proportions clear and intuitive
+- Gantt charts assist in planning and tracking learning progress over time
+- Mind maps break down complex topics into organized, hierarchical structures
+
+
 
 ---
 

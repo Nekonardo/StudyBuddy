@@ -1,4 +1,4 @@
-from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredMarkdownLoader
+from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredMarkdownLoader, UnstructuredWordDocumentLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -53,6 +53,8 @@ class RAG:
             loader = TextLoader(file_path, encoding='utf-8')
         elif file_extension == '.md':
             loader = UnstructuredMarkdownLoader(file_path)
+        elif file_extension in ['.doc', '.docx']:
+            loader = UnstructuredWordDocumentLoader(file_path)
         else:
             raise ValueError(f"Unsupported file type: {file_extension}")
 

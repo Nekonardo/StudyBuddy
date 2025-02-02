@@ -14,13 +14,19 @@ import time
 from openai import OpenAI
 from pathlib import Path
 from dotenv import load_dotenv
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from io import BytesIO
+import html
 
 from rag import RAG
 
 
 
 st.set_page_config(
-    page_title="AI Learning Assistant",
+    page_title="StudyBuddy",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items=None
@@ -62,7 +68,7 @@ init_db()
 tag_db = TagDB()
 lecture_db = LectureDB()
 
-st.title("AI Learning Assistant 🧠")
+st.title("StudyBuddy 🧠")
 
 # ===== Sidebar =====
 st.sidebar.header("Quick Access")
@@ -120,6 +126,18 @@ with st.sidebar:
 
     st.divider()
     openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
+    model = st.selectbox(
+        "Select OpenAI Model",
+        [
+            "gpt-4o",
+            "gpt-4-0125-preview",  # GPT-4 Turbo
+            "gpt-4",               # GPT-4
+            "gpt-3.5-turbo-0125",  # GPT-3.5 Turbo
+            "gpt-3.5-turbo",       # GPT-3.5 Turbo
+        ],
+        index=0,
+        help="Choose the OpenAI model to use for chat responses"
+    )
     "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
     "[View the source code](https://github.com/)"
     
@@ -143,7 +161,7 @@ def main():
 
 
 # ===== Main Content =====
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Upload Notes", "Take Quiz", "Progress Dashboard", "Manage Lectures", "AI Teacher"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Upload Notes", "Take Quiz", "Progress Dashboard", "Manage Lectures", "PDF Chat"])
 
 # Tab 1: Upload Notes
 with tab1:
@@ -662,11 +680,18 @@ def render_mermaid(mermaid_code):
             attribute_count = mermaid_code.count('\n    ')  # Count indented lines as attributes
             return max(default_height, (entity_count * 100) + (relationship_count * 50) + (attribute_count * 25))
         
-        # Existing conditions
         elif ('graph TD' in mermaid_code or 'graph TB' in mermaid_code or 
             'flowchart TD' in mermaid_code or 'flowchart TB' in mermaid_code):
-            relation = mermaid_code.count('-->')
-            return max(default_height, lines * 85 + 100 + relation * 30)
+            depth, max_nodes_per_layer = calculate_graph_depth(mermaid_code)
+            
+            # Base height per layer
+            height_per_layer = 100
+
+            # Padding for margins
+            padding = 100
+            
+            total_height = (depth * height_per_layer) + padding
+            return max(default_height, total_height)
             
         elif ('graph LR' in mermaid_code or 'graph RL' in mermaid_code or 
             'flowchart LR' in mermaid_code or 'flowchart RL' in mermaid_code):
@@ -692,6 +717,85 @@ def render_mermaid(mermaid_code):
     """
     height = calculate_height(mermaid_code)
     st.components.v1.html(html_code, height=height, scrolling=True)
+
+def calculate_graph_depth(mermaid_code):
+    """Calculate the depth (number of layers) and nodes per layer in a graph."""
+    # Extract relationships from the code
+    relationships = [line.strip() for line in mermaid_code.split('\n') 
+                    if '-->' in line and not line.strip().startswith('%')]
+    
+    # Build adjacency list
+    graph = {}
+    nodes = set()
+    
+    for rel in relationships:
+        # Split on --> and clean up any styling
+        parts = rel.split('-->')
+        if len(parts) != 2:
+            continue
+            
+        source = parts[0].strip()
+        target = parts[1].strip()
+        
+        # Remove styling information [...]
+        source = source.split('[')[0].strip()
+        target = target.split('[')[0].strip()
+        
+        # Build graph
+        if source not in graph:
+            graph[source] = set()
+        graph[source].add(target)
+        nodes.add(source)
+        nodes.add(target)
+    
+    # For cyclic graphs, treat each node as a separate layer
+    if any(target in graph and source in graph[target] 
+           for source in graph for target in graph[source]):
+        return len(nodes), 1
+    
+    # Find root nodes (nodes with no incoming edges)
+    roots = set()
+    for node in nodes:
+        is_root = True
+        for edges in graph.values():
+            if node in edges:
+                is_root = False
+                break
+        if is_root:
+            roots.add(node)
+    
+    # If no roots found (due to cycle), use any node as root
+    if not roots and nodes:
+        roots = {next(iter(nodes))}
+    
+    # Calculate max depth using BFS
+    max_depth = 0
+    nodes_per_layer = {}
+    visited = set()
+    
+    for root in roots:
+        queue = [(root, 1)]
+        layer_visited = set()
+        
+        while queue:
+            node, depth = queue.pop(0)
+            if node in layer_visited:
+                continue
+                
+            layer_visited.add(node)
+            max_depth = max(max_depth, depth)
+            
+            # Count nodes per layer
+            nodes_per_layer[depth] = nodes_per_layer.get(depth, 0) + 1
+            
+            # Add children to queue
+            if node in graph:
+                for child in graph[node]:
+                    if child not in visited:  # Only visit each node once
+                        queue.append((child, depth + 1))
+                        visited.add(child)
+    
+    return max_depth, max(nodes_per_layer.values() if nodes_per_layer else [1])
 
 # Tab 5: AI Teacher
 with tab5:
@@ -850,7 +954,7 @@ Remember, your primary goal is to enhance understanding through clear explanatio
             api_messages.insert(0, st.session_state.messages[0])
         
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=model,
             messages=api_messages,
             temperature=0.3
         )
@@ -858,6 +962,101 @@ Remember, your primary goal is to enhance understanding through clear explanatio
         msg = response.choices[0].message.content
         st.session_state.messages.append({"role": "assistant", "content": msg})
         st.rerun()
+
+    # Add export button in a container
+    export_container = st.container()
+    with export_container:
+        col1, col2 = st.columns([4, 1])
+        with col2:
+            subcol1, subcol2 = st.columns([1, 1])
+            with subcol1:
+                if st.button("🔄 Clear Chat"):
+                    # Reset chat history but keep system message and welcome message
+                    st.session_state.messages = [
+                        st.session_state.messages[0],  # Keep system message
+                        {"role": "assistant", "content": "Welcome to your AI-powered study session! 📚 How can I help you with your learning today?"}
+                    ]
+                    st.rerun()
+            with subcol2:
+                if st.button("📑 Export Chat"):
+                    # Create PDF
+                    buffer = BytesIO()
+                    doc = SimpleDocTemplate(buffer, pagesize=letter)
+                    styles = getSampleStyleSheet()
+                    
+                    # Create custom styles for different message types
+                    styles.add(ParagraphStyle(
+                        name='User',
+                        parent=styles['Normal'],
+                        textColor=colors.HexColor('#2C3E50'),
+                        spaceAfter=10,
+                        fontSize=11,
+                        leftIndent=0
+                    ))
+                    styles.add(ParagraphStyle(
+                        name='Assistant',
+                        parent=styles['Normal'],
+                        textColor=colors.HexColor('#34495E'),
+                        spaceAfter=15,
+                        fontSize=11,
+                        leftIndent=20,
+                        borderPadding=(10, 10, 10, 10),
+                        borderWidth=1,
+                        borderColor=colors.HexColor('#E8E8E8'),
+                        borderRadius=5
+                    ))
+
+                    # Build PDF content
+                    content = []
+                    content.append(Paragraph("Chat History", styles['Title']))
+                    content.append(Spacer(1, 20))
+                    
+                    # Add timestamp and model info
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    content.append(Paragraph(f"Generated on: {timestamp}", styles['Normal']))
+                    content.append(Paragraph(f"Model: {model}", styles['Normal']))
+                    content.append(Spacer(1, 20))
+
+                    for msg in st.session_state.messages:
+                        if msg["role"] == "system":
+                            continue
+                            
+                        # Clean and format message content
+                        text = msg["content"]
+                        # Handle code blocks
+                        text = text.replace("```", "")
+                        # Escape HTML special characters
+                        text = html.escape(text)
+                        # Replace newlines with HTML breaks
+                        text = text.replace("\n", "<br/>")
+                        
+                        # Format based on role
+                        if msg["role"] == "user":
+                            text = f"<b>You:</b> {text}"
+                            style = styles["User"]
+                        else:
+                            text = f"<b>Assistant:</b> {text}"
+                            style = styles["Assistant"]
+                        
+                        content.append(Paragraph(text, style))
+                        content.append(Spacer(1, 10))
+
+                    # Build PDF
+                    doc.build(content)
+                    
+                    # Prepare download button
+                    pdf_bytes = buffer.getvalue()
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"chat_history_{timestamp}.pdf"
+                    
+                    # Create download button
+                    st.download_button(
+                        label="📥 Download PDF",
+                        data=pdf_bytes,
+                        file_name=filename,
+                        mime="application/pdf",
+                    )
+                    st.success("PDF generated successfully! Click the button above to download.")
 
 # ===== Run the App =====
 if __name__ == "__main__":
