@@ -35,7 +35,7 @@ StudyBuddy is an interactive platform designed to enhance the learning process b
 - Export lecture data
 - Vector store management for RAG
 
-### 5. **PDF Chat**
+### 5. **Buddy Chat**
 - Interactive chat interface for discussing course content
 - Context-aware responses using RAG technology
 - LaTeX support for mathematical equations and formulas
@@ -131,7 +131,7 @@ graph LR
     B --> C[Knowledge Base]
     C --> D[AI Processing]
     D --> E[Quiz Generation]
-    D --> F[PDF Chat]
+    D --> F[Buddy Chat]
 
     style A fill:#f9f,stroke:#333
     style B fill:#bbf,stroke:#333
