@@ -20,7 +20,7 @@ from rag import RAG
 
 
 st.set_page_config(
-    page_title="AI Learning Assistant",
+    page_title="StudyBuddy",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items=None
@@ -31,6 +31,25 @@ import io
 import zipfile
 import json
 from functools import lru_cache
+
+# Add padding and style to the app title
+st.markdown("""
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,800&display=swap');
+        
+        .block-container {
+            padding-top: 2rem;
+        }
+        
+        h1 {
+            font-family: 'Nunito Sans', sans-serif !important;
+            font-weight: 800 !important;
+            font-stretch: expanded !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+st.title("StudyBuddy 🧠")
 
 # Add this near the top of the file, after st.set_page_config
 st.markdown("""
@@ -62,10 +81,9 @@ init_db()
 tag_db = TagDB()
 lecture_db = LectureDB()
 
-st.title("AI Learning Assistant 🧠")
-
 # ===== Sidebar =====
 st.sidebar.header("Quick Access")
+st.sidebar.divider()
 
 # Version-aware lecture loader
 @st.cache_data(show_spinner=False, ttl=60)
@@ -94,11 +112,11 @@ try:
     
     if sidebar_lectures:
         selected_lecture = st.sidebar.selectbox(
-            "📚 Select Note for Quiz:",
+            "📚 Select Note:",
             options=sidebar_lectures,
             format_func=lambda x: f"{x['title']} ({len(x['chunks'])} chunks)",
             index=0 if sidebar_lectures else None,
-            help="Choose a note to start a quiz"
+            help="Choose a note to use for starting a quiz and AI Teacher"
         )
     else:
         st.sidebar.warning("No notes available. Please upload some lecture notes first.")
@@ -143,10 +161,11 @@ def main():
 
 
 # ===== Main Content =====
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Upload Notes", "Take Quiz", "Progress Dashboard", "Manage Lectures", "AI Teacher"])
+tab1, tab2, tab3, tab4 = st.tabs(["Manage Notes", "Take Quiz", "Progress Dashboard", "AI Teacher"])
 
 # Tab 1: Upload Notes
 with tab1:
+    st.header("Upload Notes")
     uploaded_file = st.file_uploader("Upload PDF/DOCX/TXT", type=["pdf", "docx", "txt"])
     if uploaded_file:
         title = st.text_input("Lecture Title", "My Lecture Notes")
@@ -219,10 +238,76 @@ with tab1:
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
 
+    # Add a divider between upload and management sections
+    st.divider()
+    
+    # Add Note Management section
+    st.header("Note Management")
+    
+    search_query = st.text_input("🔍 Search lectures by title or tags")
+    
+    # Load lectures with reactive caching
+    @st.cache_data(show_spinner=False, ttl=60)
+    def load_managed_lectures(_lecture_db, cache_version):
+        return _lecture_db.get_all_lectures()
+    
+    lectures = load_managed_lectures(
+        lecture_db, 
+        st.session_state.lecture_cache_version
+    )
+
+    # Filtering and sorting logic
+    filtered_lectures = [lec for lec in lectures if 
+        search_query.lower() in lec["title"].lower() or
+        any(tag.lower().startswith(search_query.lower()) 
+            for tag in lec.get("tags", []))
+    ]
+    
+    # Display lectures with instant delete
+    for lecture in filtered_lectures:
+        with st.expander(f"📖 {lecture['title']}", expanded=False):
+            col1, col2, col3 = st.columns([4, 1, 1])
+            with col1:
+                st.caption(f"📅 Uploaded: {lecture['upload_date']}")
+                st.write(f"🏷️ Tags: {', '.join(lecture.get('tags', [])) or 'None'}")
+                st.write(f"📦 Chunks: {len(lecture['chunks'])} sections")
+            
+            with col2:
+                if st.button("🗑️ Delete", key=f"del_{lecture['id']}"):
+                    lecture_db.delete_lecture(lecture["id"])
+                    st.session_state.lecture_cache_version += 1
+                    st.rerun()
+            
+            with col3:
+                st.download_button(
+                    label="📥 Export",
+                    data=json.dumps(lecture, indent=2),
+                    file_name=f"{lecture['title'].replace(' ', '_')}.json",
+                    mime="application/json",
+                    key=f"exp_{lecture['id']}"
+                )
+
+    # Bulk actions with instant feedback
+    if filtered_lectures:
+        with st.container(border=True):
+            st.subheader("Bulk Operations")
+            selected = st.multiselect(
+                "Select lectures:",
+                filtered_lectures,
+                format_func=lambda x: x["title"]
+            )
+            
+            if st.button("🔥 Delete Selected", type="primary") and selected:
+                for lec in selected:
+                    lecture_db.delete_lecture(lec["id"])
+                st.session_state.lecture_cache_version += 1
+                st.rerun()
+
 # Tab 2: Take Quiz
 with tab2:
     if selected_lecture:
-        st.header(selected_lecture["title"])
+        st.header("Take Quiz")
+        st.subheader("Selected Note: " + selected_lecture["title"])
         chunks = selected_lecture["chunks"]
         
         # Session state initialization
@@ -525,176 +610,8 @@ with tab2:
             st.info("📊 No quiz data available yet. Take some quizzes to see progress!")
 
 
-#Tab 4: Lecture Management
-with tab4:
-    st.header("Lecture Management")
-    
-    # Real-time sync controls
-    # col1, col2 = st.columns([3, 1])
-    # with col1:
-    #     search_query = st.text_input("🔍 Search lectures by title or tags")
-    # with col2:
-    #     if st.button("🔄 Refresh Now", help="Force refresh lecture list"):
-    #         st.session_state.lecture_cache_version += 1
-    #         st.rerun()
-    search_query = st.text_input("🔍 Search lectures by title or tags")
-    # Load lectures with reactive caching
-    @st.cache_data(show_spinner=False, ttl=60)
-    def load_managed_lectures(_lecture_db, cache_version):
-        return _lecture_db.get_all_lectures()
-    
-    lectures = load_managed_lectures(
-        lecture_db, 
-        st.session_state.lecture_cache_version
-    )
-
-    # Filtering and sorting logic
-    filtered_lectures = [lec for lec in lectures if 
-        search_query.lower() in lec["title"].lower() or
-        any(tag.lower().startswith(search_query.lower()) 
-            for tag in lec.get("tags", []))
-    ]
-    
-    # Display lectures with instant delete
-    for lecture in filtered_lectures:
-        with st.expander(f"📖 {lecture['title']}", expanded=False):
-            col1, col2, col3 = st.columns([4, 1, 1])
-            with col1:
-                st.caption(f"📅 Uploaded: {lecture['upload_date']}")
-                st.write(f"🏷️ Tags: {', '.join(lecture.get('tags', [])) or 'None'}")
-                st.write(f"📦 Chunks: {len(lecture['chunks'])} sections")
-            
-            with col2:
-                if st.button("🗑️ Delete", key=f"del_{lecture['id']}"):
-                    lecture_db.delete_lecture(lecture["id"])
-                    st.session_state.lecture_cache_version += 1
-                    st.rerun()
-            
-            with col3:
-                st.download_button(
-                    label="📥 Export",
-                    data=json.dumps(lecture, indent=2),
-                    file_name=f"{lecture['title'].replace(' ', '_')}.json",
-                    mime="application/json",
-                    key=f"exp_{lecture['id']}"
-                )
-
-    # Bulk actions with instant feedback
-    if filtered_lectures:
-        with st.container(border=True):
-            st.subheader("Bulk Operations")
-            selected = st.multiselect(
-                "Select lectures:",
-                filtered_lectures,
-                format_func=lambda x: x["title"]
-            )
-            
-            if st.button("🔥 Delete Selected", type="primary") and selected:
-                for lec in selected:
-                    lecture_db.delete_lecture(lec["id"])
-                st.session_state.lecture_cache_version += 1
-                st.rerun()
-
-
-# Helper function for tab5
-def render_mermaid(mermaid_code):
-    def display_html_dynamic(html_code, height):
-
-        screen_width = st.components.v1.html(
-            """
-            <script>
-                const width = Math.min(window.innerWidth * 0.9, 1200); // 90% of screen width, max 1200px
-                document.write(width);
-            </script>
-            """,
-            height=0,
-        )
-        
-
-        st.components.v1.html(
-            html_code, 
-            width=screen_width, 
-            height=height, 
-            scrolling=True
-        )
-        
-    def calculate_height(mermaid_code):
-        """Calculate approximate height based on mermaid code content."""
-        lines = mermaid_code.count('\n') + 1
-        default_height = 350
-        
-        # Class Diagram - refined height calculation
-        if 'classDiagram' in mermaid_code:
-            # Count classes
-            class_count = mermaid_code.count('class ')
-            
-            # Count relationships (both inheritance and associations)
-            relationship_count = sum(1 for line in mermaid_code.split('\n') 
-                                  if any(x in line for x in ['-->', '<--', '--|>', '<|--', '--o', 'o--', '--', '..>', '<..']))
-            
-            # Count methods and attributes (lines starting with + or -)
-            member_count = sum(1 for line in mermaid_code.split('\n') 
-                             if line.strip().startswith('+') or line.strip().startswith('-'))
-            
-            parameter = 0.25
-            # Base height per class
-            height_per_class = 100 * parameter
-            # Additional height for members
-            height_per_member = 50 * parameter
-            # Height for relationships
-            height_per_relationship = 50 * parameter
-            # Padding
-            padding = 400
-            
-            total_height = (
-                (class_count * height_per_class) +
-                (member_count * height_per_member) +
-                (relationship_count * height_per_relationship) +
-                padding
-            )
-            
-            return max(default_height, total_height)
-        
-        # Entity Relationship Diagram - similar to class diagram but with different metrics
-        elif 'erDiagram' in mermaid_code:
-            entity_count = mermaid_code.count('||') + mermaid_code.count('|{')
-            relationship_count = sum(1 for line in mermaid_code.split('\n') if '--' in line)
-            attribute_count = mermaid_code.count('\n    ')  # Count indented lines as attributes
-            return max(default_height, (entity_count * 100) + (relationship_count * 50) + (attribute_count * 25))
-        
-        # Existing conditions
-        elif ('graph TD' in mermaid_code or 'graph TB' in mermaid_code or 
-            'flowchart TD' in mermaid_code or 'flowchart TB' in mermaid_code):
-            relation = mermaid_code.count('-->')
-            return max(default_height, lines * 85 + 100 + relation * 30)
-            
-        elif ('graph LR' in mermaid_code or 'graph RL' in mermaid_code or 
-            'flowchart LR' in mermaid_code or 'flowchart RL' in mermaid_code):
-            return default_height - 200
-            
-        elif 'sequenceDiagram' in mermaid_code:
-            relation = mermaid_code.count('-->')
-            return max(default_height, lines * 40 + relation * 30)
-        elif 'pie' in mermaid_code:
-            return 550
-        else:
-            return default_height
-    html_code = f"""
-    <div style="background-color: white; padding: 1rem; border-radius: 0.5rem;">
-        <script type="module">
-            import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.mjs';
-            mermaid.initialize({{ startOnLoad: true }});
-        </script>
-        <div class="mermaid">
-            {mermaid_code}
-        </div>
-    </div>
-    """
-    height = calculate_height(mermaid_code)
-    st.components.v1.html(html_code, height=height, scrolling=True)
-
 # Tab 5: AI Teacher
-with tab5:
+with tab4:
     st.header("AI Teaching Assistant")
     
     if not openai_api_key:
