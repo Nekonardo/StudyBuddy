@@ -164,7 +164,7 @@ def main():
 
 
 # ===== Main Content =====
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Upload Notes", "Take Quiz", "Progress Dashboard", "Manage Lectures", "PDF Chat"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Upload Notes", "Take Quiz", "Progress Dashboard", "Manage Notes", "Buddy Chat"])
 
 # Tab 1: Upload Notes
 with tab1:
@@ -240,7 +240,8 @@ with tab1:
 # Tab 2: Take Quiz
 with tab2:
     if selected_lecture:
-        st.header(selected_lecture["title"])
+        header_name = f"Selected Note: {selected_lecture['title']}"
+        st.header(header_name)
         chunks = selected_lecture["chunks"]
         
         # Session state initialization
@@ -450,63 +451,63 @@ with tab2:
         st.header("Learning Progress")
         
         col1, col2 = st.columns([1, 5])
-        with col1:
-            if st.button("Initialize Database"):
-                try:
-                    base_dir = os.path.dirname(os.path.abspath(__file__))
-                    db_path = os.path.join(base_dir, "../data/lectures_db.json")
+        # with col1:
+        #     if st.button("Initialize Database"):
+        #         try:
+        #             base_dir = os.path.dirname(os.path.abspath(__file__))
+        #             db_path = os.path.join(base_dir, "../data/lectures_db.json")
                     
         
-                    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        #             os.makedirs(os.path.dirname(db_path), exist_ok=True)
                     
-                    # create example lectures
-                    example_lectures = [
-                        {
-                            "id": str(uuid.uuid4()),
-                            "title": "Biology 101",
-                            "upload_date": datetime.now().strftime("%Y-%m-%d"),
-                            "file_name": "Biology_101.pdf",
-                            "chunks": [
-                                "Biology 101: Cellular Respiration Key Concepts: Mitochondria, ATP, Glycolysis, Krebs Cycle, Electron Transport Chain\n\n" +
-                                "1. Overview\nCellular respiration is the process by which cells convert glucose and oxygen into ATP (adenosine triphosphate), " +
-                                "the cell's energy currency.\n\nEquation: C6H12O6 + 6O2 → 6CO2 + 6H2O + ATP",
+        #             # create example lectures
+        #             example_lectures = [
+        #                 {
+        #                     "id": str(uuid.uuid4()),
+        #                     "title": "Biology 101",
+        #                     "upload_date": datetime.now().strftime("%Y-%m-%d"),
+        #                     "file_name": "Biology_101.pdf",
+        #                     "chunks": [
+        #                         "Biology 101: Cellular Respiration Key Concepts: Mitochondria, ATP, Glycolysis, Krebs Cycle, Electron Transport Chain\n\n" +
+        #                         "1. Overview\nCellular respiration is the process by which cells convert glucose and oxygen into ATP (adenosine triphosphate), " +
+        #                         "the cell's energy currency.\n\nEquation: C6H12O6 + 6O2 → 6CO2 + 6H2O + ATP",
                                 
-                                "2. Stages of Cellular Respiration\n" +
-                                "a. Glycolysis\n• Occurs in the cytoplasm\n• Breaks 1 glucose molecule into 2 pyruvate molecules\n• Produces 2 ATP and 2 NADH\n\n" +
-                                "b. Krebs Cycle\n• Takes place in mitochondrial matrix\n• Generates 2 ATP, 6 NADH, and 2 FADH2 per glucose"
-                            ],
-                            "tags": ["Biology", "Cellular Processes"]
-                        },
-                        {
-                            "id": str(uuid.uuid4()),
-                            "title": "Computer Science 101",
-                            "upload_date": datetime.now().strftime("%Y-%m-%d"),
-                            "file_name": "CS_101.pdf",
-                            "chunks": [
-                                "Introduction to Computer Science\n\n" +
-                                "1. Basic Concepts\n• Algorithm: A step-by-step procedure for solving a problem\n" +
-                                "• Program: Implementation of an algorithm in a programming language\n" +
-                                "• Data Structure: A way of organizing data for efficient access and modification",
+        #                         "2. Stages of Cellular Respiration\n" +
+        #                         "a. Glycolysis\n• Occurs in the cytoplasm\n• Breaks 1 glucose molecule into 2 pyruvate molecules\n• Produces 2 ATP and 2 NADH\n\n" +
+        #                         "b. Krebs Cycle\n• Takes place in mitochondrial matrix\n• Generates 2 ATP, 6 NADH, and 2 FADH2 per glucose"
+        #                     ],
+        #                     "tags": ["Biology", "Cellular Processes"]
+        #                 },
+        #                 {
+        #                     "id": str(uuid.uuid4()),
+        #                     "title": "Computer Science 101",
+        #                     "upload_date": datetime.now().strftime("%Y-%m-%d"),
+        #                     "file_name": "CS_101.pdf",
+        #                     "chunks": [
+        #                         "Introduction to Computer Science\n\n" +
+        #                         "1. Basic Concepts\n• Algorithm: A step-by-step procedure for solving a problem\n" +
+        #                         "• Program: Implementation of an algorithm in a programming language\n" +
+        #                         "• Data Structure: A way of organizing data for efficient access and modification",
                                 
-                                "2. Programming Fundamentals\n" +
-                                "• Variables and Data Types\n• Control Structures\n• Functions and Procedures\n" +
-                                "• Object-Oriented Programming Concepts"
-                            ],
-                            "tags": ["Computer Science", "Programming"]
-                        }
-                    ]
+        #                         "2. Programming Fundamentals\n" +
+        #                         "• Variables and Data Types\n• Control Structures\n• Functions and Procedures\n" +
+        #                         "• Object-Oriented Programming Concepts"
+        #                     ],
+        #                     "tags": ["Computer Science", "Programming"]
+        #                 }
+        #             ]
                     
                     
-                    with open(db_path, "w", encoding="utf-8") as f:
-                        json.dump(example_lectures, f, ensure_ascii=False, indent=2)
+        #             with open(db_path, "w", encoding="utf-8") as f:
+        #                 json.dump(example_lectures, f, ensure_ascii=False, indent=2)
                     
-                    st.session_state.lecture_cache_version += 1
-                    st.success("Database initialized successfully! 🎉")
-                    time.sleep(0.75)  
-                    st.rerun()
+        #             st.session_state.lecture_cache_version += 1
+        #             st.success("Database initialized successfully! 🎉")
+        #             time.sleep(0.75)  
+        #             st.rerun()
                     
-                except Exception as e:
-                    st.error(f"Failed to initialize database: {str(e)}")
+        #         except Exception as e:
+        #             st.error(f"Failed to initialize database: {str(e)}")
 
     
 
@@ -545,7 +546,7 @@ with tab2:
 
 #Tab 4: Lecture Management
 with tab4:
-    st.header("Lecture Management")
+    st.header("Note Management")
     
     # Real-time sync controls
     # col1, col2 = st.columns([3, 1])
@@ -814,13 +815,13 @@ def calculate_graph_depth(mermaid_code):
 
 # Tab 5: AI Teacher
 with tab5:
-    st.header("AI Teaching Assistant")
+    st.header("Buddy Chat: AI Tutor")
     SYSTEM_MESSAGE ="""
 You are an AI teaching assistant specializing in STEM subjects, with expertise in using Mermaid diagrams to explain concepts and answer questions. Your goal is to provide clear, comprehensive, and visually-aided explanations to user queries. Follow these instructions carefully:
 
 1. Analyze the following user question
 
-2. Determine if the question is suitable for explanation using a Mermaid diagram. Consider using diagrams for processes, hierarchies, timelines, relationships, or other structured information. Using a diagram is preferred.
+2. Determine if the question is suitable for explanation using a Mermaid diagram. Consider using diagrams for processes, hierarchies, timelines, relationships,mind maps, or other structured information. Diagrams are should be used when it is suitable and helpful for the user to understand the question.
 
 3. If a diagram is appropriate:
     a. Choose the most suitable Mermaid diagram type (e.g., Flowchart, Sequence Diagram, Class Diagram, etc.).
@@ -853,7 +854,7 @@ You are an AI teaching assistant specializing in STEM subjects, with expertise i
 
 10. Use code blocks for programming concepts. Enclose code in triple backticks with the language specified (e.g., ```python).
 
-11. Focus strictly on academic topics and avoid non-educational content.
+11. Focus strictly on academic topics and avoid non-educational content. 
 
 12. Structure your response as follows:
 
@@ -864,6 +865,12 @@ You are an AI teaching assistant specializing in STEM subjects, with expertise i
     [Suggested study strategies or exercises]
     [Conclusion or summary]
 
+13. When answering questions:
+    a. First check if the question is related to the lecture notes provided
+    b. If related, provide answers using only information from those lecture notes
+    c. If unrelated, politely explain that you can only answer questions about the available lecture content. Explicitly mention that the user should only ask questions about the lecture notes provided.
+    d. Suggest relevant sections from the lecture notes that may help address their question
+    e. Maintain focus on the lecture material to ensure accurate and consistent responses
 
 Remember, your primary goal is to enhance understanding through clear explanations and visual aids when appropriate.
 
@@ -930,6 +937,43 @@ Remember, your primary goal is to enhance understanding through clear explanatio
                     if len(parts) >= 1:
                         mermaid_code = parts[0].strip()
                         with message_placeholder:
+                            # Send code to OpenAI for validation
+                            validation_prompt = f"""Please validate this mermaid diagram code and return either:
+                            1. The original code if it's valid, or
+                            2. A corrected version if there are any errors
+
+                            Pay attention to the following:
+                            - Use <|-- for class inheritance and <|.. for interface implementation, and do not mix them incorrectly.
+                            - Ensure interface is used only for defining interfaces, not regular classes.
+                            - Keep relationships simple and structured, avoiding excessive arrow types or complex hierarchies.
+                            - Avoid mathematical operators (`x`, `+`, `-`, `/`, `*`) and special characters like `()[]` directly appearing in node names, otherwise Mermaid parsing will throw an error. Use `_` or `-` instead of operators, such as `Current_x_Resistance` or `Current-Times-Resistance`.
+                            
+                            Code to validate:
+                            ```mermaid
+                            {mermaid_code}
+                            ```
+                            """
+                            client = ChatOpenAI(
+                                api_key=openai_api_key,
+                                model_name=model,
+                                temperature=0.3
+                            )
+                            try:
+                                validation_response = client.invoke([{
+                                    "role": "user",
+                                    "content": validation_prompt
+                                }])
+                                
+                                # Extract validated/corrected code
+                                validated_code = validation_response.content
+                                if "```mermaid" in validated_code:
+                                    validated_code = validated_code.split("```mermaid")[1].split("```")[0].strip()
+                                else:
+                                    validated_code = mermaid_code
+                                    
+                                mermaid_code = validated_code
+                            except Exception as e:
+                                st.error(f"Error validating mermaid code: {str(e)}")
                             # Display source code first
                             st.code(mermaid_code, language="mermaid")
                             # Then render the diagram
