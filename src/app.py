@@ -82,7 +82,8 @@ tag_db = TagDB()
 lecture_db = LectureDB()
 
 # ===== Sidebar =====
-st.sidebar.header("Quick Access")
+st.sidebar.markdown("<br>", unsafe_allow_html=True)
+st.sidebar.header("☰&nbsp;&nbsp;Menu")
 st.sidebar.divider()
 
 # Version-aware lecture loader
