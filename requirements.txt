@@ -75,7 +75,7 @@ langdetect==1.0.9
 langsmith==0.3.1
 lxml==5.3.0
 mammoth==1.9.0
-Markdown @ file:///Users/ec2-user/ci_py311/markdown_1678377870854/work
+Markdown==3.5.2
 markdown-it-py==3.0.0
 markdownify==0.14.1
 markitdown==0.0.1a3
