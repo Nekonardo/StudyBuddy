@@ -23,7 +23,7 @@ def generate_quiz(chunk: str, api_key: str = None) -> dict:
     # base_url="https://api.groq.com/openai/v1"  
     # )
     # model="deepseek-r1-distill-llama-70b"
-    model="llama3-70b-8192"
+    # model="llama3-70b-8192"
 
     # original system prompt
     system_prompt = f"""You are an expert quiz generator specializing in academic content.
