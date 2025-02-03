@@ -27,6 +27,8 @@ from rag import RAG
 
 
 
+
+
 st.set_page_config(
     page_title="StudyBuddy",
     layout="wide",
@@ -39,6 +41,8 @@ import io
 import zipfile
 import json
 from functools import lru_cache
+
+
 
 # Add this near the top of the file, after st.set_page_config
 st.markdown("""
@@ -63,7 +67,7 @@ def get_key_chunks(chunks):
     vectorizer = TfidfVectorizer()
     tfidf = vectorizer.fit_transform(chunks)
     scores = tfidf.sum(axis=1).A1
-    return [chunks[i] for i in scores.argsort()[-3:]]
+    return [chunks[i] for i in scores.argsort()[-5:]]
 
 
 init_db()
@@ -119,8 +123,11 @@ if st.sidebar.button("🔄 Refresh note list"):
     st.rerun()
 with st.sidebar:
     st.divider()
+    # Store previous chat mode in session state if not exists
+    if 'previous_chat_mode' not in st.session_state:
+        st.session_state.previous_chat_mode = "General Chat"
+    
     chat_mode = "General Chat"
-
 
     if selected_lecture:
         chat_mode = st.radio(
@@ -128,7 +135,140 @@ with st.sidebar:
             ["General Chat", f"Chat with PDF: {selected_lecture['title']}"],
             index=1
         )
+    SYSTEM_MESSAGE1 ="""
+You are an AI teaching assistant specializing in STEM subjects, with expertise in using Mermaid diagrams to explain concepts and answer questions. Your goal is to provide clear, comprehensive, and visually-aided explanations to user queries. Follow these instructions carefully:
 
+1. Analyze the following user question
+
+2. Determine if the question is suitable for explanation using a Mermaid diagram. Consider using diagrams for processes, hierarchies, timelines, relationships,mind maps, or other structured information. Diagrams are should be used when it is suitable and helpful for the user to understand the question.
+
+3. If a diagram is appropriate:
+    a. Choose the most suitable Mermaid diagram type (e.g., Flowchart, Sequence Diagram, Class Diagram, etc.).
+    b. Write the Mermaid diagram code using correct syntax. Enclose the code in mermaid and tags.
+    c. Ensure the diagram is clear, concise, and not overcomplicated.
+    d. When generating Class Diagrams (classDiagram), follow these best practices to ensure correct rendering:
+    - Avoid using + - # access modifiers; define attributes and methods without prefixes.
+    - Always use the class keyword to explicitly declare classes.
+    - Use <|-- for class inheritance and <|.. for interface implementation, and do not mix them incorrectly.
+    - Ensure interface is used only for defining interfaces, not regular classes.
+    - Keep relationships simple and structured, avoiding excessive arrow types or complex hierarchies.
+    - Avoid mathematical operators (`x`, `+`, `-`, `/`, `*`) directly appearing in node names, otherwise Mermaid parsing will throw an error. Use `_` or `-` instead of operators, such as `Current_x_Resistance` or `Current-Times-Resistance`.
+
+
+4. Provide a textual explanation before the diagram, introducing the concept and why a diagram is helpful.
+
+5. After the diagram, explain its key points and how it relates to the question.
+
+6. For complex questions, consider using multiple diagrams to explain different aspects. Introduce each diagram separately.
+
+7. If the question is not suitable for a diagram, provide a clear textual explanation without forcing diagram use.
+
+8. When explaining STEM concepts:
+   a. Use simple terms and concrete examples.
+   b. Provide step-by-step guidance for problem-solving.
+   c. Use analogies to clarify misunderstandings.
+   d. Suggest relevant study strategies and practice exercises.
+
+9. Use LaTeX for mathematical equations. Enclose equations in single dollar signs for inline equations (e.g., $E=mc^2$) and double dollar signs for display equations (e.g., $$F = G\frac{m_1m_2}{r^2}$$).
+
+10. Use code blocks for programming concepts. Enclose code in triple backticks with the language specified (e.g., ```python).
+
+
+
+12. Structure your response as follows:
+
+    [Introduction and context]
+    [Diagram(s) with explanations (if applicable)]
+    [Detailed explanation of concepts]
+    [Problem-solving steps or examples (if relevant)]
+    [Suggested study strategies or exercises]
+    [Conclusion or summary]
+
+Remember, your primary goal is to enhance understanding through clear explanations and visual aids when appropriate.
+
+"""
+
+    SYSTEM_MESSAGE2 ="""
+You are an AI teaching assistant specializing in STEM subjects, with expertise in using Mermaid diagrams to explain concepts and answer questions. Your goal is to provide clear, comprehensive, and visually-aided explanations to user queries. Follow these instructions carefully:
+
+1. Analyze the following user question
+
+2. Determine if the question is suitable for explanation using a Mermaid diagram. Consider using diagrams for processes, hierarchies, timelines, relationships,mind maps, or other structured information. Diagrams are should be used when it is suitable and helpful for the user to understand the question.
+
+3. If a diagram is appropriate:
+    a. Choose the most suitable Mermaid diagram type (e.g., Flowchart, Sequence Diagram, Class Diagram, etc.).
+    b. Write the Mermaid diagram code using correct syntax. Enclose the code in mermaid and tags.
+    c. Ensure the diagram is clear, concise, and not overcomplicated.
+    d. When generating Class Diagrams (classDiagram), follow these best practices to ensure correct rendering:
+    - Avoid using + - # access modifiers; define attributes and methods without prefixes.
+    - Always use the class keyword to explicitly declare classes.
+    - Use <|-- for class inheritance and <|.. for interface implementation, and do not mix them incorrectly.
+    - Ensure interface is used only for defining interfaces, not regular classes.
+    - Keep relationships simple and structured, avoiding excessive arrow types or complex hierarchies.
+    - Avoid mathematical operators (`x`, `+`, `-`, `/`, `*`) directly appearing in node names, otherwise Mermaid parsing will throw an error. Use `_` or `-` instead of operators, such as `Current_x_Resistance` or `Current-Times-Resistance`.
+
+
+4. Provide a textual explanation before the diagram, introducing the concept and why a diagram is helpful.
+
+5. After the diagram, explain its key points and how it relates to the question.
+
+6. For complex questions, consider using multiple diagrams to explain different aspects. Introduce each diagram separately.
+
+7. If the question is not suitable for a diagram, provide a clear textual explanation without forcing diagram use.
+
+8. When explaining STEM concepts:
+   a. Use simple terms and concrete examples.
+   b. Provide step-by-step guidance for problem-solving.
+   c. Use analogies to clarify misunderstandings.
+   d. Suggest relevant study strategies and practice exercises.
+
+9. Use LaTeX for mathematical equations. Enclose equations in single dollar signs for inline equations (e.g., $E=mc^2$) and double dollar signs for display equations (e.g., $$F = G\frac{m_1m_2}{r^2}$$).
+
+10. Use code blocks for programming concepts. Enclose code in triple backticks with the language specified (e.g., ```python).
+
+11. Focus strictly on academic topics and avoid non-educational content. 
+
+12. Structure your response as follows:
+
+    [Introduction and context]
+    [Diagram(s) with explanations (if applicable)]
+    [Detailed explanation of concepts]
+    [Problem-solving steps or examples (if relevant)]
+    [Suggested study strategies or exercises]
+    [Conclusion or summary]
+
+13. When answering questions:
+    a. First check if the question is related to the lecture notes provided
+    b. If related, provide answers using only information from those lecture notes
+    c. If unrelated, politely explain that you can only answer questions about the available lecture content. Explicitly mention that the user should only ask questions about the lecture notes provided.
+    d. Suggest relevant sections from the lecture notes that may help address their question
+    e. Maintain focus on the lecture material to ensure accurate and consistent responses
+
+Remember, your primary goal is to enhance understanding through clear explanations and visual aids when appropriate.
+
+"""
+    # Reset messages when chat mode changes
+    # if chat_mode != st.session_state.previous_chat_mode:
+    #     st.session_state.messages = [
+    #         {
+    #             "role": "system", 
+    #             "content": SYSTEM_MESSAGE2 if chat_mode.startswith("Chat with PDF:") else SYSTEM_MESSAGE1
+    #         },
+    #         {
+    #             "role": "assistant", 
+    #             "content": "Welcome to your AI-powered study session! 📚 How can I help you with your learning today?"
+    #         }
+    #     ]
+    #     st.session_state.previous_chat_mode = chat_mode
+    # Only update system message when chat mode changes
+    if chat_mode != st.session_state.previous_chat_mode and "messages" in st.session_state:
+        new_system_message = SYSTEM_MESSAGE2 if chat_mode.startswith("Chat with PDF:") else SYSTEM_MESSAGE1
+        # Update only the system message (first message)
+        st.session_state.messages[0] = {
+            "role": "system",
+            "content": new_system_message
+        }
+        st.session_state.previous_chat_mode = chat_mode
     st.divider()
     openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
     model = st.selectbox(
@@ -137,6 +277,7 @@ with st.sidebar:
             "gpt-4o",
             "gpt-4o-mini",
             "gpt-4-0125-preview",  # GPT-4 Turbo
+            "gpt-4-turbo",
             "gpt-4",               # GPT-4
             "gpt-3.5-turbo-0125",  # GPT-3.5 Turbo
             "gpt-3.5-turbo",       # GPT-3.5 Turbo
@@ -147,6 +288,17 @@ with st.sidebar:
     "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
     "[View the source code](https://github.com/)"
     
+client = ChatOpenAI(
+    api_key=openai_api_key,
+    model_name=model,
+    temperature=0.3
+)
+# client = ChatOpenAI(
+#     api_key= os.getenv("GROQ_API_KEY"),
+#     model_name='deepseek-r1-distill-llama-70b',
+#     base_url="https://api.groq.com/openai/v1",
+#     temperature=0.3
+# )
 
 # Modify the cache function to include the title as a parameter.
 @st.cache_data(ttl=3600)
@@ -258,15 +410,36 @@ with tab2:
         # Quiz generation
         if st.button("Generate New Quiz"):
             try:
-                key_chunks = get_key_chunks(chunks)  # Use first 3 chunks for context
+                key_chunks = get_key_chunks(chunks)
                 quiz_data = generate_quiz(
                     "\n".join(key_chunks),
                     api_key=st.session_state.get("chatbot_api_key")  
                 )
+                
+                # Process LaTeX in quiz data
+                # if isinstance(quiz_data, dict) and 'questions' in quiz_data:
+                #     for question in quiz_data['questions']:
+                #         # Fix LaTeX in question text
+                #         if 'question' in question:
+                #             question['question'] = question['question'].replace('rac{', '\\frac{').replace('imes{', '\\times{').replace('ext{', '\\text{')
+                        
+                #         # Fix LaTeX in options
+                #         if 'options' in question:
+                #             question['options'] = [
+                #                 opt.replace('rac{', '\\frac{')
+                #                 .replace('imes{', '\\times{')
+                #                 .replace('ext{', '\\text{')
+                #                 for opt in question['options']
+                #             ]
+                        
+                #         # Fix LaTeX in explanation
+                #         if 'explanation' in question:
+                #             question['explanation'] = question['explanation'].replace('rac{', '\\frac{').replace('imes{', '\\times{').replace('ext{', '\\text{')
+                
                 if quiz_data:
                     st.session_state.quiz = quiz_data
                     st.session_state.user_answers = {}
-                    st.session_state.submitted = False  # Reset submitted state
+                    st.session_state.submitted = False
                     st.rerun()
                 else:
                     st.error("Invalid quiz format")
@@ -278,72 +451,25 @@ with tab2:
         if st.session_state.quiz and 'questions' in st.session_state.quiz:
             st.subheader("Current Quiz")
             
-            # Critical CSS fixes
-            # In app.py (within the quiz display section)
+            # Add MathJax configuration at the beginning of the quiz display section
             st.markdown("""
-            <style>
-                /* Radio button alignment fix */
-                div[role="radiogroup"] {
-                    margin-left: 0 !important;
-                }
-                div[role="radiogroup"] > label {
-                    display: flex !important;
-                    align-items: flex-start !important;
-                    gap: 12px !important;
-                    margin: 12px 0 !important;
-                    padding: 14px;
-                    border: 1px solid #e0e0e0 !important;
-                    border-radius: 8px;
-                    white-space: normal !important;
-                    transition: all 0.3s ease;
-                }
-                div[role="radiogroup"] > label > div:first-child {
-                    margin-top: 2px !important;
-                }
-                div[role="radiogroup"] > label:hover {
-                    border-color: #2563eb !important;
-                    transform: translateX(4px);
-                }
-
-                /* Answer result styling */
-                div[data-testid="stMarkdownContainer"] {
-                    margin: 16px 0 !important;
-                }
-                .answer-feedback {
-                    padding: 16px;
-                    border-radius: 8px;
-                    margin: 12px 0;
-                    border-left: 4px solid;
-                }
-                .correct-answer {
-                    background: #f0faf5;
-                    border-color: #10b981;
-                }
-                .incorrect-answer {
-                    background: #fef2f2;
-                    border-color: #ef4444;
-                }
-                .correct-badge {
-                    color: #10b981;
-                    font-weight: 600;
-                }
-                .incorrect-badge {
-                    color: #ef4444;
-                    font-weight: 600;
-                }
-                .correct-answer .explanation {
-                    color: #065f46;
-                }
-                .incorrect-answer .explanation {
-                    color: #7f1d1d;
-                }
-
-                /* Text sizing */
-                div[data-testid="stMarkdownContainer"] > div {
-                    font-size: 16px !important;
-                    line-height: 1.6 !important;
-                }
-            </style>
+            <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+            <script type="text/javascript" id="MathJax-script" async
+                src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+            </script>
+            <script>
+                window.MathJax = {
+                    tex: {
+                        inlineMath: [['$', '$'], ['\\(', '\\)']],
+                        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                        processEscapes: true,
+                        processEnvironments: true
+                    },
+                    options: {
+                        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                    }
+                };
+            </script>
             """, unsafe_allow_html=True)
 
             for i, q in enumerate(st.session_state.quiz['questions']):
@@ -365,18 +491,27 @@ with tab2:
                         key=unique_key,  # Unique key per lecture/question
                         format_func=lambda x: x  # Remove markdown formatting
                     )
-                    
+                    # plain text options
+                    # Display original string options for debugging
+                    # with st.expander("Show raw options"):
+                    #     st.write("Raw options:")
+                    #     for opt in options:
+                    #         st.text(opt)
+
                     st.session_state.user_answers[i] = selected
                     
                     if selected:
                         is_correct = selected == q['answer']
                         if st.session_state.submitted:
-                            # Show full results with styling
+                            # Modify the quiz result display section
                             st.markdown(f"""
                             <style>
                                 .math-content {{
                                     font-size: 1.1em;
                                     margin: 8px 0;
+                                }}
+                                .MathJax {{
+                                    display: inline !important;
                                 }}
                             </style>
                             <div style="padding:12px; border-radius:8px; 
@@ -384,10 +519,10 @@ with tab2:
                                         id="quiz-result-{i}">
                                 <div style="color: {'#137333' if is_correct else '#a50e0e'}; 
                                         margin-bottom: 8px;" class="math-content">
-                                    Your answer: <span class="math">{selected}</span> {'✅' if is_correct else '❌'}
+                                    Your answer: {selected} {'✅' if is_correct else '❌'}
                                 </div>
                                 <div style="font-weight: bold; margin-bottom: 8px;" class="math-content">
-                                    Correct answer: <span class="math">{q['answer']}</span>
+                                    Correct answer: {q['answer']}
                                 </div>
                                 <div class="math-content">
                                     Explanation: {q.get('explanation', '')}
@@ -395,27 +530,14 @@ with tab2:
                             </div>
 
                             <script>
-                                window.MathJax = {{
-                                    tex: {{
-                                        inlineMath: [['$', '$']],
-                                        displayMath: [['$$', '$$']],
-                                        processEscapes: true,
-                                        processEnvironments: true
-                                    }},
-                                    svg: {{
-                                        fontCache: 'global'
-                                    }},
-                                    options: {{
-                                        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-                                        processHtmlClass: 'math'
+                                document.addEventListener('DOMContentLoaded', function() {{
+                                    // Force MathJax to reprocess the entire quiz result container
+                                    if (typeof MathJax !== 'undefined') {{
+                                        MathJax.texReset();
+                                        MathJax.typesetPromise([document.getElementById('quiz-result-{i}')])
+                                            .catch((err) => console.log('MathJax error:', err));
                                     }}
-                                }};
-
-                                // Ensure MathJax is loaded and process the new content
-                                if (typeof MathJax !== 'undefined') {{
-                                    MathJax.typesetPromise([document.getElementById('quiz-result-{i}')])
-                                        .catch((err) => console.log('MathJax error:', err));
-                                }}
+                                }});
                             </script>
                             """, unsafe_allow_html=True)
                     st.divider()
@@ -819,65 +941,7 @@ def calculate_graph_depth(mermaid_code):
 # Tab 5: AI Teacher
 with tab5:
     st.header("Buddy Chat: AI Tutor")
-    SYSTEM_MESSAGE ="""
-You are an AI teaching assistant specializing in STEM subjects, with expertise in using Mermaid diagrams to explain concepts and answer questions. Your goal is to provide clear, comprehensive, and visually-aided explanations to user queries. Follow these instructions carefully:
 
-1. Analyze the following user question
-
-2. Determine if the question is suitable for explanation using a Mermaid diagram. Consider using diagrams for processes, hierarchies, timelines, relationships,mind maps, or other structured information. Diagrams are should be used when it is suitable and helpful for the user to understand the question.
-
-3. If a diagram is appropriate:
-    a. Choose the most suitable Mermaid diagram type (e.g., Flowchart, Sequence Diagram, Class Diagram, etc.).
-    b. Write the Mermaid diagram code using correct syntax. Enclose the code in mermaid and tags.
-    c. Ensure the diagram is clear, concise, and not overcomplicated.
-    d. When generating Class Diagrams (classDiagram), follow these best practices to ensure correct rendering:
-    - Avoid using + - # access modifiers; define attributes and methods without prefixes.
-    - Always use the class keyword to explicitly declare classes.
-    - Use <|-- for class inheritance and <|.. for interface implementation, and do not mix them incorrectly.
-    - Ensure interface is used only for defining interfaces, not regular classes.
-    - Keep relationships simple and structured, avoiding excessive arrow types or complex hierarchies.
-    - Avoid mathematical operators (`x`, `+`, `-`, `/`, `*`) directly appearing in node names, otherwise Mermaid parsing will throw an error. Use `_` or `-` instead of operators, such as `Current_x_Resistance` or `Current-Times-Resistance`.
-
-
-4. Provide a textual explanation before the diagram, introducing the concept and why a diagram is helpful.
-
-5. After the diagram, explain its key points and how it relates to the question.
-
-6. For complex questions, consider using multiple diagrams to explain different aspects. Introduce each diagram separately.
-
-7. If the question is not suitable for a diagram, provide a clear textual explanation without forcing diagram use.
-
-8. When explaining STEM concepts:
-   a. Use simple terms and concrete examples.
-   b. Provide step-by-step guidance for problem-solving.
-   c. Use analogies to clarify misunderstandings.
-   d. Suggest relevant study strategies and practice exercises.
-
-9. Use LaTeX for mathematical equations. Enclose equations in single dollar signs for inline equations (e.g., $E=mc^2$) and double dollar signs for display equations (e.g., $$F = G\frac{m_1m_2}{r^2}$$).
-
-10. Use code blocks for programming concepts. Enclose code in triple backticks with the language specified (e.g., ```python).
-
-11. Focus strictly on academic topics and avoid non-educational content. 
-
-12. Structure your response as follows:
-
-    [Introduction and context]
-    [Diagram(s) with explanations (if applicable)]
-    [Detailed explanation of concepts]
-    [Problem-solving steps or examples (if relevant)]
-    [Suggested study strategies or exercises]
-    [Conclusion or summary]
-
-13. When answering questions:
-    a. First check if the question is related to the lecture notes provided
-    b. If related, provide answers using only information from those lecture notes
-    c. If unrelated, politely explain that you can only answer questions about the available lecture content. Explicitly mention that the user should only ask questions about the lecture notes provided.
-    d. Suggest relevant sections from the lecture notes that may help address their question
-    e. Maintain focus on the lecture material to ensure accurate and consistent responses
-
-Remember, your primary goal is to enhance understanding through clear explanations and visual aids when appropriate.
-
-"""
 
     if not openai_api_key:
         load_dotenv(Path(__file__).parent.parent / "config" / ".env")
@@ -889,6 +953,8 @@ Remember, your primary goal is to enhance understanding through clear explanatio
     # Initialize RAG instance at the beginning of tab5
     rag = RAG(openai_api_key=openai_api_key)
 
+    # Select appropriate system message based on chat mode
+    SYSTEM_MESSAGE = SYSTEM_MESSAGE2 if chat_mode.startswith("Chat with PDF:") else SYSTEM_MESSAGE1
     # Initialize with teaching assistant context
     if "messages" not in st.session_state:
         st.session_state["messages"] = [
@@ -940,10 +1006,17 @@ Remember, your primary goal is to enhance understanding through clear explanatio
                     if len(parts) >= 1:
                         mermaid_code = parts[0].strip()
                         with message_placeholder:
-                            # Send code to OpenAI for validation
+                            # Create a separate client for Mermaid validation using GPT-3.5 Turbo
+                            validation_client = ChatOpenAI(
+                                api_key=openai_api_key,
+                                model_name="gpt-4-turbo",
+                                temperature=0.1
+                            )
+                            
                             validation_prompt = f"""Please validate this mermaid diagram code and return either:
                             1. The original code if it's valid, or
                             2. A corrected version if there are any errors
+                            3. Do not change the code if it's valid
 
                             Pay attention to the following:
                             - Use <|-- for class inheritance and <|.. for interface implementation, and do not mix them incorrectly.
@@ -956,13 +1029,9 @@ Remember, your primary goal is to enhance understanding through clear explanatio
                             {mermaid_code}
                             ```
                             """
-                            client = ChatOpenAI(
-                                api_key=openai_api_key,
-                                model_name=model,
-                                temperature=0.3
-                            )
+
                             try:
-                                validation_response = client.invoke([{
+                                validation_response = validation_client.invoke([{
                                     "role": "user",
                                     "content": validation_prompt
                                 }])
@@ -989,11 +1058,6 @@ Remember, your primary goal is to enhance understanding through clear explanatio
     prompt = st.chat_input("Ask your study question here...")
     
     if prompt:
-        client = ChatOpenAI(
-            api_key=openai_api_key,
-            model_name=model,  # Use model_name instead of model
-            temperature=0.3
-        )
         st.session_state.messages.append({"role": "user", "content": prompt})
         
         if chat_mode.startswith("Chat with PDF:"):

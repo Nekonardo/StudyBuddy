@@ -11,6 +11,7 @@ import pytesseract
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import os
 
+
 # ===== Lecture Notes Ingestion =====
 class LectureNotesIngester:
     def __init__(self):
