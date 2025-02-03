@@ -67,6 +67,7 @@ def get_key_chunks(chunks):
     vectorizer = TfidfVectorizer()
     tfidf = vectorizer.fit_transform(chunks)
     scores = tfidf.sum(axis=1).A1
+    
     return [chunks[i] for i in scores.argsort()[-5:]]
 
 
@@ -287,6 +288,7 @@ Remember, your primary goal is to enhance understanding through clear explanatio
     )
     "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
     "[View the source code](https://github.com/)"
+    "[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://nekonardo-studybuddy-srcapp-fjgveg.streamlit.app/)"
     
 client = ChatOpenAI(
     api_key=openai_api_key,
@@ -323,6 +325,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(["Upload Notes", "Take Quiz", "Progress D
 
 # Tab 1: Upload Notes
 with tab1:
+    st.header("📂 Upload & Organize Your Study Materials")
     uploaded_file = st.file_uploader("Upload PDF/DOCX/TXT", type=["pdf", "docx", "txt"])
     if uploaded_file:
         title = st.text_input("Lecture Title", "My Lecture Notes")
@@ -394,9 +397,10 @@ with tab1:
 
 # Tab 2: Take Quiz
 with tab2:
+    st.header("🎯 Test Your Knowledge & Improve")
     if selected_lecture:
         header_name = f"Selected Note: {selected_lecture['title']}"
-        st.header(header_name)
+        st.subheader(header_name)
         chunks = selected_lecture["chunks"]
         
         # Session state initialization
@@ -493,10 +497,10 @@ with tab2:
                     )
                     # plain text options
                     # Display original string options for debugging
-                    # with st.expander("Show raw options"):
-                    #     st.write("Raw options:")
-                    #     for opt in options:
-                    #         st.text(opt)
+                    with st.expander("Show in LaTeX code"):
+                        st.write("View the text and LaTeX source code:")
+                        for opt in options:
+                            st.text(opt)
 
                     st.session_state.user_answers[i] = selected
                     
@@ -573,7 +577,7 @@ with tab2:
                 
     # Tab 3: Progress Dashboard
     with tab3:
-        st.header("Learning Progress")
+        st.header("📊 Track Your Learning Progress")
         
         col1, col2 = st.columns([1, 5])
         # with col1:
@@ -671,7 +675,7 @@ with tab2:
 
 #Tab 4: Lecture Management
 with tab4:
-    st.header("Note Management")
+    st.header("🗂 Organize & Access Your Notes Anytime")
     
     # Real-time sync controls
     # col1, col2 = st.columns([3, 1])
@@ -940,8 +944,8 @@ def calculate_graph_depth(mermaid_code):
 
 # Tab 5: AI Teacher
 with tab5:
-    st.header("Buddy Chat: AI Tutor")
-
+    st.header("🤖 Chat & Learn with Your AI Buddy")
+    st.subheader(f"Selected Note: {selected_lecture['title']}")
 
     if not openai_api_key:
         load_dotenv(Path(__file__).parent.parent / "config" / ".env")

@@ -15,17 +15,22 @@ def generate_quiz(chunk: str, api_key: str = None) -> dict:
     """
 
     client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
+    model="gpt-4-turbo"
+
+    # Groq model
     # client = OpenAI(
     # api_key=api_key or os.getenv("GROQ_API_KEY"),
     # base_url="https://api.groq.com/openai/v1"  
     # )
+    # model="deepseek-r1-distill-llama-70b"
+    model="llama3-70b-8192"
 
     # original system prompt
     system_prompt = f"""You are an expert quiz generator specializing in academic content.
     Rules:
     1. Focus ONLY on technical/scientific concepts from the provided text. 
     2. NEVER create questions about schedules, logistics, or course administration, grade bonus, management, etc.
-    3. Adapt to the subject matter (biology, CS, physics, etc.), focus on content which is important for the student to learn.
+    3. Adapt to the subject matter (biology, CS, physics, etc.), focus on content which is important for the student to learn. Focus on the theoretical concepts.
     4. For mathematical expressions, ALWAYS wrap them in LaTeX math delimiters and use double braces:
        - Use `$...$` for inline math: $\\\\frac{{1}}{{2}}$
        - Use `$...$` for displayed equations
@@ -207,7 +212,7 @@ def generate_quiz(chunk: str, api_key: str = None) -> dict:
 
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model=model,
             # model="gpt-4-turbo",
             # model="deepseek-r1-distill-llama-70b",
             messages=[
@@ -215,7 +220,7 @@ def generate_quiz(chunk: str, api_key: str = None) -> dict:
                 {"role": "user", "content": user_prompt}
             ],
             response_format={"type": "json_object"},
-            temperature=0.3
+            temperature=0.4
         )
 
         quiz_data = json.loads(response.choices[0].message.content)
