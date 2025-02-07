@@ -24,6 +24,8 @@ def generate_quiz(chunk: str, api_key: str = None) -> dict:
     # )
     # model="deepseek-r1-distill-llama-70b"
     # model="llama3-70b-8192"
+    # model="deepseek-r1-distill-llama-70b"
+    # model="llama3-70b-8192"
 
     # original system prompt
     system_prompt = f"""You are an expert quiz generator specializing in academic content.
@@ -213,6 +215,7 @@ def generate_quiz(chunk: str, api_key: str = None) -> dict:
     try:
         response = client.chat.completions.create(
             model=model,
+            model=model,
             # model="gpt-4-turbo",
             # model="deepseek-r1-distill-llama-70b",
             messages=[
@@ -220,6 +223,7 @@ def generate_quiz(chunk: str, api_key: str = None) -> dict:
                 {"role": "user", "content": user_prompt}
             ],
             response_format={"type": "json_object"},
+       
             temperature=0.4
         )
 
