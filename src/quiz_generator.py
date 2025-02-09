@@ -215,7 +215,7 @@ def generate_quiz(chunk: str, api_key: str = None) -> dict:
     try:
         response = client.chat.completions.create(
             model=model,
-            model=model,
+            # model=model,
             # model="gpt-4-turbo",
             # model="deepseek-r1-distill-llama-70b",
             messages=[
